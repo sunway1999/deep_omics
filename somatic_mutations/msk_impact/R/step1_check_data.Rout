@@ -1,0 +1,770 @@
+
+R version 3.5.2 (2018-12-20) -- "Eggshell Igloo"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> library(Matrix)
+> 
+> # ---------------------------------------------------------------------------
+> # read in clinical information per patient
+> # ---------------------------------------------------------------------------
+> 
+> patient = read.table("../msk_impact_2017/data_clinical_patient.txt", 
++                          header=TRUE, sep="\t", as.is=TRUE)
+> dim(patient)
+[1] 10336     6
+> head(patient)
+  PATIENT_ID    SEX VITAL_STATUS  SMOKING_HISTORY OS_MONTHS OS_STATUS
+1  P-0000004 Female        ALIVE          Unknown        NA    LIVING
+2  P-0000015 Female     DECEASED            Never        NA  DECEASED
+3  P-0000023   Male     DECEASED            Never      8.71  DECEASED
+4  P-0000024 Female        ALIVE Prev/Curr Smoker     36.75    LIVING
+5  P-0000025 Female        ALIVE            Never      8.81    LIVING
+6  P-0000026 Female        ALIVE            Never        NA    LIVING
+> 
+> table(patient$SEX, useNA="ifany")
+
+Female   Male 
+  5193   5143 
+> table(patient$SMOKING_HISTORY, useNA="ifany")
+
+           Never Prev/Curr Smoker          Unknown             <NA> 
+            4448             4109             1778                1 
+> table(patient$VITAL_STATUS, patient$OS_STATUS, useNA="ifany")
+          
+           DECEASED LIVING <NA>
+  ALIVE           0   7420    0
+  DECEASED     2915      0    0
+  <NA>            0      0    1
+> summary(patient$OS_MONTHS)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+  0.000   6.418  10.980  12.272  17.060  40.400    2762 
+> 
+> length(unique(patient$PATIENT_ID))
+[1] 10336
+> 
+> # ---------------------------------------------------------------------------
+> # read in clinical information per sample
+> # ---------------------------------------------------------------------------
+> 
+> samples = read.table("../msk_impact_2017/data_clinical_sample.txt", 
++                         header=TRUE, sep="\t", as.is=TRUE, quote="",
++                         comment.char = "", skip=4)
+> dim(samples)
+[1] 10945    16
+> head(samples)
+  PATIENT_ID         SAMPLE_ID SAMPLE_COLLECTION_SOURCE
+1  P-0000004 P-0000004-T01-IM3                  Outside
+2  P-0000015 P-0000015-T01-IM3                 In-House
+3  P-0000023 P-0000023-T01-IM3                 In-House
+4  P-0000024 P-0000024-T01-IM3                 In-House
+5  P-0000025 P-0000025-T02-IM5                 In-House
+6  P-0000025 P-0000025-T01-IM3                 In-House
+  SPECIMEN_PRESERVATION_TYPE SPECIMEN_TYPE DNA_INPUT SAMPLE_COVERAGE
+1                       FFPE        Biopsy       250             428
+2                       FFPE        Biopsy       198             281
+3                       FFPE        Biopsy       250             454
+4                       FFPE     Resection       250            1016
+5                       FFPE        Biopsy       250            1147
+6                       FFPE     Resection       250            1161
+  TUMOR_PURITY MATCHED_STATUS SAMPLE_TYPE PRIMARY_SITE METASTATIC_SITE
+1           50        Matched     Primary       Breast  Not Applicable
+2           40        Matched  Metastasis       Breast           Liver
+3           30        Matched     Primary   Peritoneum  Not Applicable
+4           40        Matched  Metastasis       Uterus            Lung
+5           30        Matched  Metastasis       Uterus      Peritoneum
+6           NA        Matched     Primary       Uterus  Not Applicable
+  SAMPLE_CLASS ONCOTREE_CODE        CANCER_TYPE
+1        Tumor           IDC      Breast Cancer
+2        Tumor           IDC      Breast Cancer
+3        Tumor        PEMESO       Mesothelioma
+4        Tumor           UEC Endometrial Cancer
+5        Tumor           USC Endometrial Cancer
+6        Tumor           USC Endometrial Cancer
+                                         CANCER_TYPE_DETAILED
+1                            Breast Invasive Ductal Carcinoma
+2                            Breast Invasive Ductal Carcinoma
+3                                     Peritoneal Mesothelioma
+4                              Uterine Endometrioid Carcinoma
+5 Uterine Serous Carcinoma/Uterine Papillary Serous Carcinoma
+6 Uterine Serous Carcinoma/Uterine Papillary Serous Carcinoma
+> length(unique(samples$PATIENT_ID))
+[1] 10336
+> length(unique(samples$SAMPLE_ID))
+[1] 10945
+> 
+> table(samples$SAMPLE_COLLECTION_SOURCE, useNA="ifany")
+
+In-House  Outside 
+    7119     3826 
+> table(samples$SPECIMEN_PRESERVATION_TYPE, useNA="ifany")
+
+Cell Pellet         DNA        FFPE         FNA       Other 
+         20        1941        8982           1           1 
+> table(samples$SPECIMEN_TYPE, useNA="ifany")
+
+     #N/A    Biopsy      CUSA  Cytology Resection 
+        1      4916         1       586      5441 
+> 
+> summary(samples$DNA_INPUT)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   50.0   250.0   250.0   238.6   250.0   250.0 
+> summary(samples$SAMPLE_COVERAGE)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   48.0   538.0   726.0   717.5   895.0  2778.0 
+> 
+> pdf("../figures/DNA_input_vs_coverage.pdf", width=9, height=3)
+> par(mfrow=c(1,3), mar=c(5,4,1,1), bty="n")
+> hist(samples$DNA_INPUT, xlab="DNA input", main="")
+> hist(samples$SAMPLE_COVERAGE, xlab="Sample coverage", main="")
+> DNAinput.cat = cut(samples$DNA_INPUT, breaks=c(50, 100, 200, 250), 
++                    include.lowest=TRUE)
+> boxplot(samples$SAMPLE_COVERAGE ~ DNAinput.cat, 
++         xlab="DNA input", ylab="Sample coverage")
+> dev.off()
+null device 
+          1 
+> 
+> table(samples$DNA_INPUT > 100, samples$SAMPLE_COVERAGE > 100)
+       
+        FALSE  TRUE
+  FALSE     4   236
+  TRUE     54 10651
+> table(samples$DNA_INPUT > 100, samples$SAMPLE_COVERAGE > 200)
+       
+        FALSE  TRUE
+  FALSE    27   213
+  TRUE    297 10408
+> 
+> samples = samples[samples$DNA_INPUT > 100 & samples$SAMPLE_COVERAGE > 200,]
+> dim(samples)
+[1] 10408    16
+> samples[1:2,]
+  PATIENT_ID         SAMPLE_ID SAMPLE_COLLECTION_SOURCE
+1  P-0000004 P-0000004-T01-IM3                  Outside
+2  P-0000015 P-0000015-T01-IM3                 In-House
+  SPECIMEN_PRESERVATION_TYPE SPECIMEN_TYPE DNA_INPUT SAMPLE_COVERAGE
+1                       FFPE        Biopsy       250             428
+2                       FFPE        Biopsy       198             281
+  TUMOR_PURITY MATCHED_STATUS SAMPLE_TYPE PRIMARY_SITE METASTATIC_SITE
+1           50        Matched     Primary       Breast  Not Applicable
+2           40        Matched  Metastasis       Breast           Liver
+  SAMPLE_CLASS ONCOTREE_CODE   CANCER_TYPE             CANCER_TYPE_DETAILED
+1        Tumor           IDC Breast Cancer Breast Invasive Ductal Carcinoma
+2        Tumor           IDC Breast Cancer Breast Invasive Ductal Carcinoma
+> 
+> 
+> table(samples$MATCHED_STATUS)
+
+  Matched Unmatched 
+    10177       231 
+> summary(samples$TUMOR_PURITY)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+  10.00   30.00   40.00   45.85   60.00  100.00     439 
+> table(samples$SAMPLE_TYPE)
+
+Metastasis    Primary 
+      4496       5912 
+> 
+> table(samples$SAMPLE_TYPE, samples$SPECIMEN_PRESERVATION_TYPE, 
++       useNA="ifany")
+            
+             Cell Pellet  DNA FFPE  FNA Other
+  Metastasis          13  780 3702    0     1
+  Primary              0 1089 4822    1     0
+> 
+> table(samples$SAMPLE_TYPE, samples$SPECIMEN_TYPE, useNA="ifany")
+            
+             #N/A Biopsy CUSA Cytology Resection
+  Metastasis    1   2469    0      358      1668
+  Primary       0   2160    1      142      3609
+> 
+> 
+> # ---------------------------------------------------------------------------
+> # read in mutation data
+> # ---------------------------------------------------------------------------
+> 
+> mut.extended = read.table("../msk_impact_2017/data_mutations_extended.txt", 
++                           header=TRUE, sep="\t", as.is=TRUE, quote="")
+> dim(mut.extended)
+[1] 78263    45
+> head(mut.extended)
+  Hugo_Symbol Entrez_Gene_Id Center NCBI_Build Chromosome Start_Position
+1        SPEN             NA     NA     GRCh37          1       16265908
+2         ALK             NA     NA     GRCh37          2       29543736
+3       PDCD1             NA     NA     GRCh37          2      242793433
+4      MAP3K1             NA     NA     GRCh37          5       56177843
+5        FLT4             NA     NA     GRCh37          5      180030313
+6        FLT4             NA     NA     GRCh37          5      180051003
+  End_Position Strand      Consequence Variant_Classification Variant_Type
+1     16265908      + missense_variant      Missense_Mutation          SNP
+2     29543736      + missense_variant      Missense_Mutation          SNP
+3    242793433      + missense_variant      Missense_Mutation          SNP
+4     56177843      + missense_variant      Missense_Mutation          SNP
+5    180030313      + missense_variant      Missense_Mutation          SNP
+6    180051003      + missense_variant      Missense_Mutation          SNP
+  Reference_Allele Tumor_Seq_Allele1 Tumor_Seq_Allele2 dbSNP_RS
+1                A                 A                 T       NA
+2                A                 A                 G       NA
+3                G                 G                 A       NA
+4                C                 C                 G       NA
+5                C                 C                 A       NA
+6                T                 T                 C       NA
+  dbSNP_Val_Status Tumor_Sample_Barcode Matched_Norm_Sample_Barcode
+1               NA    P-0000004-T01-IM3                          NA
+2               NA    P-0000004-T01-IM3                          NA
+3               NA    P-0000004-T01-IM3                          NA
+4               NA    P-0000004-T01-IM3                          NA
+5               NA    P-0000004-T01-IM3                          NA
+6               NA    P-0000004-T01-IM3                          NA
+  Match_Norm_Seq_Allele1 Match_Norm_Seq_Allele2 Tumor_Validation_Allele1
+1                     NA                     NA                       NA
+2                     NA                     NA                       NA
+3                     NA                     NA                       NA
+4                     NA                     NA                       NA
+5                     NA                     NA                       NA
+6                     NA                     NA                       NA
+  Tumor_Validation_Allele2 Match_Norm_Validation_Allele1
+1                       NA                            NA
+2                       NA                            NA
+3                       NA                            NA
+4                       NA                            NA
+5                       NA                            NA
+6                       NA                            NA
+  Match_Norm_Validation_Allele2 Verification_Status Validation_Status
+1                            NA                  NA                NA
+2                            NA                  NA                NA
+3                            NA                  NA                NA
+4                            NA                  NA                NA
+5                            NA                  NA                NA
+6                            NA                  NA                NA
+  Mutation_Status Sequencing_Phase Sequence_Source Validation_Method Score
+1              NA               NA              NA                NA    NA
+2              NA               NA              NA                NA    NA
+3              NA               NA              NA                NA    NA
+4              NA               NA              NA                NA    NA
+5              NA               NA              NA                NA    NA
+6              NA               NA              NA                NA    NA
+  BAM_File Sequencer t_ref_count t_alt_count n_ref_count n_alt_count
+1       NA        NA         400          73          NA          NA
+2       NA        NA         180          13          NA          NA
+3       NA        NA         225          15          NA          NA
+4       NA        NA         370          12          NA          NA
+5       NA        NA         360          25          NA          NA
+6       NA        NA         273          22          NA          NA
+                         HGVSc        HGVSp HGVSp_Short   Transcript_ID
+1 ENST00000375759.3:c.10981A>T p.Ile3661Phe    p.I3661F ENST00000375759
+2  ENST00000389048.3:c.1427T>C  p.Val476Ala     p.V476A ENST00000389048
+3   ENST00000334409.5:c.644C>T  p.Ala215Val     p.A215V ENST00000334409
+4  ENST00000399503.3:c.2816C>G  p.Ser939Cys     p.S939C ENST00000399503
+5  ENST00000261937.6:c.3971G>T p.Arg1324Leu    p.R1324L ENST00000261937
+6  ENST00000261937.6:c.1480A>G  p.Thr494Ala     p.T494A ENST00000261937
+       RefSeq Protein_position  Codons Hotspot
+1 NM_015001.2             3661 Att/Ttt       0
+2 NM_004304.4              476 gTg/gCg       0
+3 NM_005018.2              215 gCc/gTc       0
+4 NM_005921.1              939 tCt/tGt       0
+5 NM_182925.4             1324 cGg/cTg       0
+6 NM_182925.4              494 Acg/Gcg       0
+> length(unique(mut.extended$Tumor_Sample_Barcode))
+[1] 10129
+> length(unique(mut.extended$Hugo_Symbol))
+[1] 414
+> 
+> table(mut.extended$NCBI_Build, useNA="ifany")
+
+GRCh37 
+ 78263 
+> sort(table(mut.extended$Consequence, useNA="ifany"), decreasing=T)[1:20]
+
+                                              missense_variant 
+                                                         53778 
+                                            frameshift_variant 
+                                                          8596 
+                                                   stop_gained 
+                                                          7523 
+                        missense_variant,splice_region_variant 
+                                                          1650 
+                                         upstream_gene_variant 
+                                                          1367 
+                                              inframe_deletion 
+                                                          1222 
+                                       splice_acceptor_variant 
+                                                          1187 
+                                          splice_donor_variant 
+                                                          1049 
+                             stop_gained,splice_region_variant 
+                                                           273 
+                                             inframe_insertion 
+                                                           269 
+                      frameshift_variant,splice_region_variant 
+                                                           174 
+   splice_donor_variant,coding_sequence_variant,intron_variant 
+                                                           172 
+splice_acceptor_variant,coding_sequence_variant,intron_variant 
+                                                           163 
+                                      protein_altering_variant 
+                                                           112 
+                                                    start_lost 
+                                                           104 
+                                stop_gained,frameshift_variant 
+                                                            95 
+                                                intron_variant 
+                                                            93 
+                  splice_donor_variant,coding_sequence_variant 
+                                                            59 
+               splice_acceptor_variant,coding_sequence_variant 
+                                                            50 
+                                                     stop_lost 
+                                                            43 
+> table(mut.extended$Variant_Classification, useNA="ifany")
+
+               3'Flank                  3'UTR                5'Flank 
+                    42                     14                   1367 
+                 5'UTR            Frame_Shift        Frame_Shift_Del 
+                    40                      1                   6296 
+       Frame_Shift_Ins           In_Frame_Del           In_Frame_Ins 
+                  2486                   1351                    291 
+                Intron      Missense_Mutation      Nonsense_Mutation 
+                   107                  55428                   7922 
+      Nonstop_Mutation                 Silent          Splice_Region 
+                    43                     13                     14 
+           Splice_Site Translation_Start_Site 
+                  2742                    106 
+> 
+> total_count = mut.extended$t_ref_count + mut.extended$t_alt_count
+> summary(mut.extended$t_alt_count/total_count)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+0.01878 0.12347 0.21248 0.25372 0.34087 1.01786 
+> ww1 = which(mut.extended$t_alt_count/total_count > 1)
+> mut.extended[ww1,]
+      Hugo_Symbol Entrez_Gene_Id Center NCBI_Build Chromosome Start_Position
+74576       STK11             NA     NA     GRCh37         19        1222611
+      End_Position Strand
+74576      1223004      +
+                                                         Consequence
+74576 splice_acceptor_variant,coding_sequence_variant,intron_variant
+      Variant_Classification Variant_Type
+74576            Splice_Site          DEL
+                                                                                                                                                                                                                                                                                                                                                                                                Reference_Allele
+74576 TCTGGGCGCCTGGCGGGGACTGGGGCTGCCCCCCGATAGCCTCCTGGGCTGGGATGTGCTCAGGGCCCCCCAGACCCCCTTCTGGCCTTTGCTGGCTTTGCAGCCAGCATCCATCTGGTGGGTGCTGGCTTCTGAGTGCCACCTGGGACACAGGCCTCAGGGTGGAGGGGACATCTGTCAGGCTTGGAGTCAGGTCAGCCTGCCTGCTCCTAGAGGACATGGCTGAGCTTCTGTGGTCACAGCCACCCCTTGCACGGCCTGGTCCCAGCTCCTGAGTGTGTGGCAGGTACCCTGGGCCCAGAGGAGCTGGGTCGGAAAACTGGACCGCCCTGGTGCCAGCCTGACAGGCGCCACTGCTTCTGGGCGTTTGCAGCTGGTTCCGGAAGAAACATCC
+                                                                                                                                                                                                                                                                                                                                                                                               Tumor_Seq_Allele1
+74576 TCTGGGCGCCTGGCGGGGACTGGGGCTGCCCCCCGATAGCCTCCTGGGCTGGGATGTGCTCAGGGCCCCCCAGACCCCCTTCTGGCCTTTGCTGGCTTTGCAGCCAGCATCCATCTGGTGGGTGCTGGCTTCTGAGTGCCACCTGGGACACAGGCCTCAGGGTGGAGGGGACATCTGTCAGGCTTGGAGTCAGGTCAGCCTGCCTGCTCCTAGAGGACATGGCTGAGCTTCTGTGGTCACAGCCACCCCTTGCACGGCCTGGTCCCAGCTCCTGAGTGTGTGGCAGGTACCCTGGGCCCAGAGGAGCTGGGTCGGAAAACTGGACCGCCCTGGTGCCAGCCTGACAGGCGCCACTGCTTCTGGGCGTTTGCAGCTGGTTCCGGAAGAAACATCC
+      Tumor_Seq_Allele2 dbSNP_RS dbSNP_Val_Status Tumor_Sample_Barcode
+74576                 -       NA               NA    P-0012310-T01-IM5
+      Matched_Norm_Sample_Barcode Match_Norm_Seq_Allele1 Match_Norm_Seq_Allele2
+74576                          NA                     NA                     NA
+      Tumor_Validation_Allele1 Tumor_Validation_Allele2
+74576                       NA                       NA
+      Match_Norm_Validation_Allele1 Match_Norm_Validation_Allele2
+74576                            NA                            NA
+      Verification_Status Validation_Status Mutation_Status Sequencing_Phase
+74576                  NA                NA              NA               NA
+      Sequence_Source Validation_Method Score BAM_File Sequencer t_ref_count
+74576              NA                NA    NA       NA        NA          -2
+      t_alt_count n_ref_count n_alt_count                              HGVSc
+74576         114          NA          NA ENST00000326873.7:c.921-371_943del
+      HGVSp   HGVSp_Short   Transcript_ID      RefSeq Protein_position Codons
+74576       p.X307_splice ENST00000326873 NM_000455.4               NA       
+      Hotspot
+74576       0
+> 
+> # ---------------------------------------------------------------------------
+> # read in MSKCC mutation data
+> # ---------------------------------------------------------------------------
+> 
+> mut.mskcc = read.table("../msk_impact_2017/data_mutations_mskcc.txt", 
++                        header=TRUE, sep="\t", as.is=TRUE, quote="")
+> dim(mut.mskcc)
+[1] 78263    46
+> head(mut.mskcc)
+  Hugo_Symbol Entrez_Gene_Id Center NCBI_Build Chromosome Start_Position
+1        SPEN             NA     NA     GRCh37          1       16265908
+2         ALK             NA     NA     GRCh37          2       29543736
+3       PDCD1             NA     NA     GRCh37          2      242793433
+4      MAP3K1             NA     NA     GRCh37          5       56177843
+5        FLT4             NA     NA     GRCh37          5      180030313
+6        FLT4             NA     NA     GRCh37          5      180051003
+  End_Position Strand      Consequence Variant_Classification Variant_Type
+1     16265908      + missense_variant      Missense_Mutation          SNP
+2     29543736      + missense_variant      Missense_Mutation          SNP
+3    242793433      + missense_variant      Missense_Mutation          SNP
+4     56177843      + missense_variant      Missense_Mutation          SNP
+5    180030313      + missense_variant      Missense_Mutation          SNP
+6    180051003      + missense_variant      Missense_Mutation          SNP
+  Reference_Allele Tumor_Seq_Allele1 Tumor_Seq_Allele2 dbSNP_RS
+1                A                 A                 T       NA
+2                A                 A                 G       NA
+3                G                 G                 A       NA
+4                C                 C                 G       NA
+5                C                 C                 A       NA
+6                T                 T                 C       NA
+  dbSNP_Val_Status Tumor_Sample_Barcode Matched_Norm_Sample_Barcode
+1               NA    P-0000004-T01-IM3                          NA
+2               NA    P-0000004-T01-IM3                          NA
+3               NA    P-0000004-T01-IM3                          NA
+4               NA    P-0000004-T01-IM3                          NA
+5               NA    P-0000004-T01-IM3                          NA
+6               NA    P-0000004-T01-IM3                          NA
+  Match_Norm_Seq_Allele1 Match_Norm_Seq_Allele2 Tumor_Validation_Allele1
+1                     NA                     NA                       NA
+2                     NA                     NA                       NA
+3                     NA                     NA                       NA
+4                     NA                     NA                       NA
+5                     NA                     NA                       NA
+6                     NA                     NA                       NA
+  Tumor_Validation_Allele2 Match_Norm_Validation_Allele1
+1                       NA                            NA
+2                       NA                            NA
+3                       NA                            NA
+4                       NA                            NA
+5                       NA                            NA
+6                       NA                            NA
+  Match_Norm_Validation_Allele2 Verification_Status Validation_Status
+1                            NA                  NA                NA
+2                            NA                  NA                NA
+3                            NA                  NA                NA
+4                            NA                  NA                NA
+5                            NA                  NA                NA
+6                            NA                  NA                NA
+  Mutation_Status Sequencing_Phase Sequence_Source Validation_Method Score
+1              NA               NA              NA                NA    NA
+2              NA               NA              NA                NA    NA
+3              NA               NA              NA                NA    NA
+4              NA               NA              NA                NA    NA
+5              NA               NA              NA                NA    NA
+6              NA               NA              NA                NA    NA
+  BAM_File Sequencer t_ref_count t_alt_count n_ref_count n_alt_count
+1       NA        NA         400          73          NA          NA
+2       NA        NA         180          13          NA          NA
+3       NA        NA         225          15          NA          NA
+4       NA        NA         370          12          NA          NA
+5       NA        NA         360          25          NA          NA
+6       NA        NA         273          22          NA          NA
+                         HGVSc        HGVSp HGVSp_Short   Transcript_ID
+1 ENST00000375759.3:c.10981A>T p.Ile3661Phe    p.I3661F ENST00000375759
+2  ENST00000389048.3:c.1427T>C  p.Val476Ala     p.V476A ENST00000389048
+3   ENST00000334409.5:c.644C>T  p.Ala215Val     p.A215V ENST00000334409
+4  ENST00000399503.3:c.2816C>G  p.Ser939Cys     p.S939C ENST00000399503
+5  ENST00000261937.6:c.3971G>T p.Arg1324Leu    p.R1324L ENST00000261937
+6  ENST00000261937.6:c.1480A>G  p.Thr494Ala     p.T494A ENST00000261937
+       RefSeq Protein_position  Codons Hotspot cDNA_change
+1 NM_015001.2             3661 Att/Ttt       0  c.10981A>T
+2 NM_004304.4              476 gTg/gCg       0   c.1427T>C
+3 NM_005018.2              215 gCc/gTc       0    c.644C>T
+4 NM_005921.1              939 tCt/tGt       0   c.2816C>G
+5 NM_182925.4             1324 cGg/cTg       0   c.3971G>T
+6 NM_182925.4              494 Acg/Gcg       0   c.1480A>G
+> length(unique(mut.mskcc$Tumor_Sample_Barcode))
+[1] 10129
+> length(unique(mut.mskcc$Hugo_Symbol))
+[1] 414
+> table(mut.mskcc$Variant_Classification, useNA="ifany")
+
+               3'Flank                5'Flank                  5'UTR 
+                    35                   1359                     14 
+           Frame_Shift        Frame_Shift_Del        Frame_Shift_Ins 
+                     1                   6298                   2488 
+          In_Frame_Del           In_Frame_Ins                 Intron 
+                  1352                    293                     29 
+     Missense_Mutation      Nonsense_Mutation       Nonstop_Mutation 
+                 55556                   7936                     43 
+         Splice_Region            Splice_Site Translation_Start_Site 
+                     7                   2746                    106 
+> 
+> mskcc = samples$SAMPLE_ID %in% mut.mskcc$Tumor_Sample_Barcode
+> table(samples$SAMPLE_COLLECTION_SOURCE, mskcc)
+          mskcc
+           FALSE TRUE
+  In-House   481 6332
+  Outside    293 3302
+> 
+> table(mut.mskcc$Tumor_Sample_Barcode %in% mut.extended$Tumor_Sample_Barcode)
+
+ TRUE 
+78263 
+> 
+> # ---------------------------------------------------------------------------
+> # it looks like MSKCC mutation data is a subset of extended mutation data
+> # though it is not clear what is the difference. 
+> # ---------------------------------------------------------------------------
+> 
+> # ---------------------------------------------------------------------------
+> # prepare a data matrix of all the mutations and all the samples
+> # ---------------------------------------------------------------------------
+> 
+> mut2use = mut.extended[which(mut.extended$Tumor_Sample_Barcode %in% samples$SAMPLE_ID),]
+> dim(mut2use)
+[1] 75643    45
+> 
+> mat1 = match(mut2use$Tumor_Sample_Barcode, samples$SAMPLE_ID)
+> table(is.na(mat1))
+
+FALSE 
+75643 
+> mut2use$PATIENT_ID = samples$PATIENT_ID[mat1]
+> sam2use = samples[mat1,]
+> 
+> # ---------------------------------------------------------------------------
+> # one patient may have multiple samples, chose the one with largest 
+> # number of mutations
+> # ---------------------------------------------------------------------------
+> 
+> tb0 = tapply(sam2use$SAMPLE_ID, sam2use$PATIENT_ID, table)
+> n.per.patient = sapply(tb0, length)
+> table(n.per.patient)
+n.per.patient
+   1    2    3    4    5 
+8705  418   28    1    1 
+> 
+> tb1 = lapply(tb0, sort, decreasing=TRUE)
+> length(tb1)
+[1] 9153
+> 
+> tb0[which(n.per.patient==2)[1:5]]
+$`P-0000025`
+
+P-0000025-T01-IM3 P-0000025-T02-IM5 
+                1                 2 
+
+$`P-0000037`
+
+P-0000037-T01-IM3 P-0000037-T02-IM3 
+                4                 3 
+
+$`P-0000066`
+
+P-0000066-T01-IM3 P-0000066-T02-IM5 
+                4                 4 
+
+$`P-0000067`
+
+P-0000067-T01-IM3 P-0000067-T02-IM5 
+                4                 4 
+
+$`P-0000114`
+
+P-0000114-T01-IM3 P-0000114-T02-IM3 
+                4                 4 
+
+> tb1[which(n.per.patient==2)[1:5]]
+$`P-0000025`
+
+P-0000025-T02-IM5 P-0000025-T01-IM3 
+                2                 1 
+
+$`P-0000037`
+
+P-0000037-T01-IM3 P-0000037-T02-IM3 
+                4                 3 
+
+$`P-0000066`
+
+P-0000066-T01-IM3 P-0000066-T02-IM5 
+                4                 4 
+
+$`P-0000067`
+
+P-0000067-T01-IM3 P-0000067-T02-IM5 
+                4                 4 
+
+$`P-0000114`
+
+P-0000114-T01-IM3 P-0000114-T02-IM3 
+                4                 4 
+
+> 
+> sampleID2use = sapply(tb1, function(x){names(x)[1]})
+> length(sampleID2use)
+[1] 9153
+> sampleID2use[1:5]
+          P-0000004           P-0000015           P-0000023           P-0000024 
+"P-0000004-T01-IM3" "P-0000015-T01-IM3" "P-0000023-T01-IM3" "P-0000024-T01-IM3" 
+          P-0000025 
+"P-0000025-T02-IM5" 
+> 
+> dim(mut2use)
+[1] 75643    46
+> mut2use = mut2use[which(mut2use$Tumor_Sample_Barcode %in% sampleID2use),]
+> dim(mut2use)
+[1] 73041    46
+> 
+> length(unique(mut2use$Tumor_Sample_Barcode))
+[1] 9153
+> length(unique(mut2use$PATIENT_ID))
+[1] 9153
+> 
+> table(mut2use$PATIENT_ID == substr(mut2use$Tumor_Sample_Barcode, 1, 9))
+
+ TRUE 
+73041 
+> 
+> mut2use = unique(mut2use[,c("Hugo_Symbol", "Tumor_Sample_Barcode")])
+> dim(mut2use)
+[1] 64271     2
+> head(mut2use)
+  Hugo_Symbol Tumor_Sample_Barcode
+1        SPEN    P-0000004-T01-IM3
+2         ALK    P-0000004-T01-IM3
+3       PDCD1    P-0000004-T01-IM3
+4      MAP3K1    P-0000004-T01-IM3
+5        FLT4    P-0000004-T01-IM3
+7      NOTCH4    P-0000004-T01-IM3
+> 
+> # ---------------------------------------------------------------------------
+> # read in genes of the two platforms
+> # ---------------------------------------------------------------------------
+> 
+> genes341 = scan(file="../msk_impact_2017/data_gene_panel_impact341.txt", 
++                 skip=3, what=character())
+Read 342 items
+> genes341[1:5]
+[1] "gene_list:" "ABL1"       "AKT1"       "AKT2"       "AKT3"      
+> genes341 = genes341[-1]
+> 
+> genes410 = scan(file="../msk_impact_2017/data_gene_panel_impact410.txt", 
++                 skip=3, what=character())
+Read 411 items
+> genes410[1:5]
+[1] "gene_list:" "ABL1"       "ACVR1"      "AKT1"       "AKT2"      
+> genes410 = genes410[-1]
+> 
+> table(genes341 %in% genes410)
+
+TRUE 
+ 341 
+> genes.add = setdiff(genes410, genes341)
+> table(mut2use$Hugo_Symbol %in% genes341)
+
+FALSE  TRUE 
+ 4468 59803 
+> table(mut2use$Hugo_Symbol %in% genes410)
+
+FALSE  TRUE 
+  219 64052 
+> 
+> t1 = table(mut2use$Hugo_Symbol[mut2use$Hugo_Symbol %in% genes341])
+> summary(as.numeric(t1))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    8.0    60.0   115.5   175.9   209.5  4124.0 
+> 
+> t2 = table(mut2use$Hugo_Symbol[mut2use$Hugo_Symbol %in% genes.add])
+> summary(as.numeric(t2))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   2.00   25.00   41.00   62.49   74.25  338.00 
+> sort(t2, decreasing=TRUE)[1:20]
+
+  ZFHX3     MGA ANKRD11   EPHA7    GLI1  TCF7L2   PLCG2   POLD1     PGR   MST1R 
+    338     275     203     189     168     154     139     121     118     116 
+  INHBA   NCOA3   CSF3R   FOXO1   PPM1D   NUP93   HLA-A   SH2B3   NEGR1  STAT5B 
+    114      94      86      81      78      77      75      74      72      71 
+> 
+> # ---------------------------------------------------------------------------
+> # only use the genes in the 341 platform
+> # ---------------------------------------------------------------------------
+> 
+> mut2use = mut2use[which(mut2use$Hugo_Symbol %in% genes341),]
+> dim(mut2use)
+[1] 59803     2
+> 
+> genes    = sort(unique(mut2use$Hugo_Symbol))
+> patients = sort(unique(mut2use$Tumor_Sample_Barcode))
+> length(genes)
+[1] 340
+> length(patients)
+[1] 9112
+> 
+> gene.index = match(mut2use$Hugo_Symbol, genes)
+> pati.index = match(mut2use$Tumor_Sample_Barcode, patients)
+> 
+> mut.matrix = sparseMatrix(i=gene.index, j=pati.index, 
++                           x=rep(1, nrow(mut2use)), 
++                           dimnames=list(genes, patients))
+> dim(mut.matrix)
+[1]  340 9112
+> mut.matrix[1:2,1:4]
+2 x 4 sparse Matrix of class "dgCMatrix"
+     P-0000004-T01-IM3 P-0000015-T01-IM3 P-0000023-T01-IM3 P-0000024-T01-IM3
+ABL1                 .                 .                 .                 .
+AKT1                 1                 .                 .                 .
+> 
+> mut.matrix1 = as(mut.matrix, "matrix")
+> dim(mut.matrix1)
+[1]  340 9112
+> mut.matrix1[1:2,1:4]
+     P-0000004-T01-IM3 P-0000015-T01-IM3 P-0000023-T01-IM3 P-0000024-T01-IM3
+ABL1                 0                 0                 0                 0
+AKT1                 1                 0                 0                 0
+> 
+> mload = colSums(mut.matrix1)
+> table(mload >= 3)
+
+FALSE  TRUE 
+ 2582  6530 
+> table(mload >= 5)
+
+FALSE  TRUE 
+ 5190  3922 
+> table(mload >= 6)
+
+FALSE  TRUE 
+ 6119  2993 
+> table(mload >= 8)
+
+FALSE  TRUE 
+ 7309  1803 
+> table(mload >= 10)
+
+FALSE  TRUE 
+ 7871  1241 
+> 
+> mut.df = data.frame(geneName=rownames(mut.matrix1), mut.matrix1)
+> dim(mut.df)
+[1]  340 9113
+> mut.df[1:2,1:4]
+     geneName P.0000004.T01.IM3 P.0000015.T01.IM3 P.0000023.T01.IM3
+ABL1     ABL1                 0                 0                 0
+AKT1     AKT1                 1                 0                 0
+> 
+> write.table(mut.df, file='../data/mut_matrix_340_x_9112.txt', sep="\t", 
++             row.names=FALSE, col.names=TRUE, quote=FALSE)
+> 
+> sessionInfo()
+R version 3.5.2 (2018-12-20)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: macOS Mojave 10.14.6
+
+Matrix products: default
+BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] Matrix_1.2-15
+
+loaded via a namespace (and not attached):
+[1] compiler_3.5.2  grid_3.5.2      lattice_0.20-38
+> q(save="no")
+> proc.time()
+   user  system elapsed 
+  6.773   0.458   7.227 

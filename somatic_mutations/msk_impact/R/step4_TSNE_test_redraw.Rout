@@ -1,0 +1,485 @@
+
+R version 3.5.2 (2018-12-20) -- "Eggshell Igloo"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> library(Rtsne)
+> library(ggplot2)
+> 
+> # ---------------------------------------------------------------------------
+> # read in clinical information per sample
+> # ---------------------------------------------------------------------------
+> 
+> samples = read.table("../msk_impact_2017/data_clinical_sample.txt", 
++                      header=TRUE, sep="\t", as.is=TRUE, quote="",
++                      comment.char = "", skip=4)
+> dim(samples)
+[1] 10945    16
+> head(samples)
+  PATIENT_ID         SAMPLE_ID SAMPLE_COLLECTION_SOURCE
+1  P-0000004 P-0000004-T01-IM3                  Outside
+2  P-0000015 P-0000015-T01-IM3                 In-House
+3  P-0000023 P-0000023-T01-IM3                 In-House
+4  P-0000024 P-0000024-T01-IM3                 In-House
+5  P-0000025 P-0000025-T02-IM5                 In-House
+6  P-0000025 P-0000025-T01-IM3                 In-House
+  SPECIMEN_PRESERVATION_TYPE SPECIMEN_TYPE DNA_INPUT SAMPLE_COVERAGE
+1                       FFPE        Biopsy       250             428
+2                       FFPE        Biopsy       198             281
+3                       FFPE        Biopsy       250             454
+4                       FFPE     Resection       250            1016
+5                       FFPE        Biopsy       250            1147
+6                       FFPE     Resection       250            1161
+  TUMOR_PURITY MATCHED_STATUS SAMPLE_TYPE PRIMARY_SITE METASTATIC_SITE
+1           50        Matched     Primary       Breast  Not Applicable
+2           40        Matched  Metastasis       Breast           Liver
+3           30        Matched     Primary   Peritoneum  Not Applicable
+4           40        Matched  Metastasis       Uterus            Lung
+5           30        Matched  Metastasis       Uterus      Peritoneum
+6           NA        Matched     Primary       Uterus  Not Applicable
+  SAMPLE_CLASS ONCOTREE_CODE        CANCER_TYPE
+1        Tumor           IDC      Breast Cancer
+2        Tumor           IDC      Breast Cancer
+3        Tumor        PEMESO       Mesothelioma
+4        Tumor           UEC Endometrial Cancer
+5        Tumor           USC Endometrial Cancer
+6        Tumor           USC Endometrial Cancer
+                                         CANCER_TYPE_DETAILED
+1                            Breast Invasive Ductal Carcinoma
+2                            Breast Invasive Ductal Carcinoma
+3                                     Peritoneal Mesothelioma
+4                              Uterine Endometrioid Carcinoma
+5 Uterine Serous Carcinoma/Uterine Papillary Serous Carcinoma
+6 Uterine Serous Carcinoma/Uterine Papillary Serous Carcinoma
+> 
+> table(samples$acronym)
+< table of extent 0 >
+> sort(table(samples$tumor_tissue_site), decreasing=TRUE)[1:20]
+ [1] NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA
+> 
+> 
+> table(samples$CANCER_TYPE)
+
+               Adrenocortical Adenoma              Adrenocortical Carcinoma 
+                                    1                                    25 
+                     Ampullary Cancer                   Ampullary Carcinoma 
+                                   16                                     9 
+                          Anal Cancer                    Appendiceal Cancer 
+                                   32                                    79 
+                       Bladder Cancer                           Bone Cancer 
+                                  423                                   134 
+                        Breast Cancer                        Breast Sarcoma 
+                                 1324                                    13 
+            Cancer of Unknown Primary                       Cervical Cancer 
+                                  186                                    50 
+                           CNS Cancer                     Colorectal Cancer 
+                                   48                                  1007 
+                      Embryonal Tumor                    Endometrial Cancer 
+                                    6                                   218 
+               Esophagogastric Cancer Gastrointestinal Neuroendocrine Tumor 
+                                  341                                    46 
+       Gastrointestinal Stromal Tumor                       Germ Cell Tumor 
+                                  137                                   288 
+    Gestational Trophoblastic Disease                                Glioma 
+                                    3                                   553 
+                 Head and Neck Cancer                  Hepatobiliary Cancer 
+                                  186                                   355 
+                        Histiocytosis                      Hodgkin Lymphoma 
+                                   22                                     5 
+                             Leukemia                          Mastocytosis 
+                                    1                                     1 
+              Mature B-Cell Neoplasms             Mature T and NK Neoplasms 
+                                  134                                    29 
+                             Melanoma                          Mesothelioma 
+                                  365                                   107 
+            Miscellaneous Brain Tumor   Miscellaneous Neuroepithelial Tumor 
+                                    6                                     9 
+                   Nerve Sheath Tumor                  Non-Hodgkin Lymphoma 
+                                   16                                     5 
+           Non-Small Cell Lung Cancer                        Ovarian Cancer 
+                                 1668                                   224 
+                    Pancreatic Cancer                         Penile Cancer 
+                                  502                                     7 
+            Peripheral Nervous System                      Pheochromocytoma 
+                                   80                                     4 
+                         Pineal Tumor                       Prostate Cancer 
+                                    3                                   717 
+                 Renal Cell Carcinoma                        Retinoblastoma 
+                                  361                                     4 
+                Salivary Gland Cancer                          Sellar Tumor 
+                                  114                                     5 
+               Sex Cord Stromal Tumor             Skin Cancer, Non-Melanoma 
+                                   19                                   148 
+                   Small Bowel Cancer                Small Cell Lung Cancer 
+                                   35                                    82 
+                  Soft Tissue Sarcoma     T-Lymphoblastic Leukemia/Lymphoma 
+                                  443                                     1 
+                         Thymic Tumor                        Thyroid Cancer 
+                                   18                                   231 
+                      Uterine Sarcoma                        Vaginal Cancer 
+                                   93                                     4 
+                          Wilms Tumor 
+                                    2 
+> 
+> # ---------------------------------------------------------------------------
+> # read in mutation information
+> # ---------------------------------------------------------------------------
+> 
+> mutDat = read.table("../data/mut_matrix_340_x_9112.txt", 
++                     header=TRUE, sep="\t", as.is=TRUE, quote="",
++                     comment.char = "")
+> dim(mutDat)
+[1]  340 9113
+> mutDat[1:2,1:5]
+  geneName P.0000004.T01.IM3 P.0000015.T01.IM3 P.0000023.T01.IM3
+1     ABL1                 0                 0                 0
+2     AKT1                 1                 0                 0
+  P.0000024.T01.IM3
+1                 0
+2                 0
+> 
+> mutDat = data.matrix(mutDat[,-1])
+> mb = colSums(mutDat)
+> length(mb)
+[1] 9112
+> mb[1:5]
+P.0000004.T01.IM3 P.0000015.T01.IM3 P.0000023.T01.IM3 P.0000024.T01.IM3 
+               14                 7                 4                 5 
+P.0000025.T02.IM5 
+                2 
+> summary(mb)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  1.000   2.000   4.000   6.563   6.000 194.000 
+> 
+> # ---------------------------------------------------------------------------
+> # read in mutation encoding data
+> # ---------------------------------------------------------------------------
+> 
+> bn = list.files(path="../results", pattern = "_bottleneck_test.txt", 
++                 full.names=TRUE)
+> bn
+ [1] "../results/model_20_400_200_bs_32_lr_0.0005_e_10_layer_2_bottleneck_test.txt"
+ [2] "../results/model_20_400_200_bs_32_lr_0.0005_e_50_layer_2_bottleneck_test.txt"
+ [3] "../results/model_20_400_200_bs_32_lr_0.001_e_10_layer_2_bottleneck_test.txt" 
+ [4] "../results/model_20_400_200_bs_32_lr_0.001_e_50_layer_2_bottleneck_test.txt" 
+ [5] "../results/model_20_400_bs_32_lr_0.0005_e_10_layer_1_bottleneck_test.txt"    
+ [6] "../results/model_20_400_bs_32_lr_0.0005_e_50_layer_1_bottleneck_test.txt"    
+ [7] "../results/model_20_400_bs_32_lr_0.001_e_10_layer_1_bottleneck_test.txt"     
+ [8] "../results/model_20_400_bs_32_lr_0.001_e_50_layer_1_bottleneck_test.txt"     
+ [9] "../results/model_20_600_bs_32_lr_0.0005_e_10_layer_1_bottleneck_test.txt"    
+[10] "../results/model_20_600_bs_32_lr_0.0005_e_50_layer_1_bottleneck_test.txt"    
+[11] "../results/model_20_600_bs_32_lr_0.001_e_10_layer_1_bottleneck_test.txt"     
+[12] "../results/model_20_600_bs_32_lr_0.001_e_50_layer_1_bottleneck_test.txt"     
+> bn.label = gsub("../results/", "", bn, fixed=TRUE)
+> bn.label = gsub("_bottleneck_test.txt", "", bn.label)
+> 
+> datL = list()
+> 
+> for(k in 1:length(bn)){
++   dat1 = read.csv(bn[k])
++   rownames(dat1) = dat1$X
++   dat1 = data.matrix(dat1[,-1])
++   datL[[bn.label[k]]] = dat1
++ }
+> 
+> dim(datL[[1]])
+[1] 785  20
+> datL[[1]][1:2,]
+                     X0     X1     X2     X3 X4    X5     X6       X7     X8
+P.0002753.T01.IM3 3.397 4.6320 2.4860 4.4920  0 1.835 4.3060 4.558000 1.3580
+P.0011239.T02.IM5 1.688 0.5253 0.2534 0.2483  0 1.019 0.6892 0.007264 0.3251
+                    X9   X10    X11    X12    X13    X14   X15    X16   X17
+P.0002753.T01.IM3 3.44 2.688 0.7331 3.6770 0.0000 4.2210 2.908 2.1490 4.672
+P.0011239.T02.IM5 0.00 0.000 2.0640 0.3779 0.7172 0.1705 1.242 0.7208 0.000
+                    X18   X19
+P.0002753.T01.IM3 1.490 2.979
+P.0011239.T02.IM5 1.102 1.089
+> 
+> # ---------------------------------------------------------------------------
+> # check one setup, remove the latent reprentation with zero weights
+> # ---------------------------------------------------------------------------
+> 
+> k = 9
+> 
+> bnk = bn.label[k]
+> bn.label
+ [1] "model_20_400_200_bs_32_lr_0.0005_e_10_layer_2"
+ [2] "model_20_400_200_bs_32_lr_0.0005_e_50_layer_2"
+ [3] "model_20_400_200_bs_32_lr_0.001_e_10_layer_2" 
+ [4] "model_20_400_200_bs_32_lr_0.001_e_50_layer_2" 
+ [5] "model_20_400_bs_32_lr_0.0005_e_10_layer_1"    
+ [6] "model_20_400_bs_32_lr_0.0005_e_50_layer_1"    
+ [7] "model_20_400_bs_32_lr_0.001_e_10_layer_1"     
+ [8] "model_20_400_bs_32_lr_0.001_e_50_layer_1"     
+ [9] "model_20_600_bs_32_lr_0.0005_e_10_layer_1"    
+[10] "model_20_600_bs_32_lr_0.0005_e_50_layer_1"    
+[11] "model_20_600_bs_32_lr_0.001_e_10_layer_1"     
+[12] "model_20_600_bs_32_lr_0.001_e_50_layer_1"     
+> bnk
+[1] "model_20_600_bs_32_lr_0.0005_e_10_layer_1"
+> 
+> dat1 = datL[[bnk]]
+> dim(dat1)
+[1] 785  20
+> dat1[1:2,]
+                      X0    X1     X2    X3    X4       X5    X6    X7    X8
+P.0002753.T01.IM3 2.6780 3.198 2.2490 3.852 3.577 0.487800 3.337 2.659 4.212
+P.0011239.T02.IM5 0.2746 0.124 0.1212 0.000 1.912 0.001132 0.000 0.000 1.609
+                      X9    X10  X11    X12     X13    X14   X15   X16   X17
+P.0002753.T01.IM3 2.4800 2.0030 2.42 4.4660 4.43300 2.6740 1.533 2.731 3.572
+P.0011239.T02.IM5 0.2657 0.1213 0.00 0.6557 0.06855 0.5885 0.000 0.000 0.000
+                     X18    X19
+P.0002753.T01.IM3 3.1530 3.4210
+P.0011239.T02.IM5 0.2071 0.8908
+> apply(dat1, 2, sd)
+       X0        X1        X2        X3        X4        X5        X6        X7 
+1.0463951 1.0976198 1.1080590 1.1009000 1.0603784 0.9637879 1.0846556 0.9911501 
+       X8        X9       X10       X11       X12       X13       X14       X15 
+1.2039356 0.9705124 1.0912604 0.7890025 0.9935202 1.1003876 1.0088645 0.8793630 
+      X16       X17       X18       X19 
+0.9523417 1.0085219 1.0915808 1.1976321 
+> w2kp = which(apply(dat1, 2, sd) > 0)
+> w2kp
+ X0  X1  X2  X3  X4  X5  X6  X7  X8  X9 X10 X11 X12 X13 X14 X15 X16 X17 X18 X19 
+  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20 
+> 
+> dat2 = unique(dat1[,w2kp])
+> dim(dat1)
+[1] 785  20
+> dim(dat2)
+[1] 785  20
+> 
+> # ---------------------------------------------------------------------------
+> # run TSNE using bottleneck layer or PCs
+> # ---------------------------------------------------------------------------
+> 
+> set.seed(100)
+> date()
+[1] "Tue Nov  5 23:17:44 2019"
+> tsne = Rtsne(dat2, pca = FALSE)
+> date()
+[1] "Tue Nov  5 23:17:46 2019"
+> 
+> table(rownames(dat2) %in% colnames(mutDat))
+
+TRUE 
+ 785 
+> mutDat.test = mutDat[,match(rownames(dat2), colnames(mutDat))]
+> dim(mutDat.test)
+[1] 340 785
+> mutDat.test[1:2,1:5]
+     P.0002753.T01.IM3 P.0011239.T02.IM5 P.0005189.T01.IM5 P.0007169.T01.IM5
+[1,]                 0                 0                 0                 0
+[2,]                 0                 0                 0                 0
+     P.0011457.T01.IM5
+[1,]                 0
+[2,]                 0
+> 
+> date()
+[1] "Tue Nov  5 23:17:46 2019"
+> tsne2 = Rtsne(t(mutDat.test), pca = TRUE, initial_dim=ncol(dat2))
+> date()
+[1] "Tue Nov  5 23:17:48 2019"
+> 
+> # ---------------------------------------------------------------------------
+> # construct a data frame holding the tSNE results and sample information
+> # ---------------------------------------------------------------------------
+> 
+> df_tsne = data.frame(tsne$Y)
+> rownames(df_tsne) = rownames(dat2)
+> sampleID = gsub("-", ".", samples$SAMPLE_ID, fixed=TRUE)
+> samples2 = samples[match(rownames(dat2), sampleID),]
+> 
+> dim(df_tsne)
+[1] 785   2
+> df_tsne[1:2,]
+                         X1        X2
+P.0002753.T01.IM3 -8.914268 -10.10125
+P.0011239.T02.IM5 12.669534  22.63619
+> 
+> df_tsne = cbind(df_tsne, tsne2$Y)
+> names(df_tsne)[3:4] = c("X1.PCA", "X2.PCA")
+> dim(df_tsne)
+[1] 785   4
+> df_tsne[1:2,]
+                         X1        X2   X1.PCA   X2.PCA
+P.0002753.T01.IM3 -8.914268 -10.10125 16.51352 1.727564
+P.0011239.T02.IM5 12.669534  22.63619 -5.37728 7.090687
+> 
+> dim(samples2)
+[1] 785  16
+> samples2[1:2,1:10]
+      PATIENT_ID         SAMPLE_ID SAMPLE_COLLECTION_SOURCE
+2663   P-0002753 P-0002753-T01-IM3                 In-House
+10327  P-0011239 P-0011239-T02-IM5                  Outside
+      SPECIMEN_PRESERVATION_TYPE SPECIMEN_TYPE DNA_INPUT SAMPLE_COVERAGE
+2663                        FFPE        Biopsy       250             546
+10327                       FFPE     Resection       250             938
+      TUMOR_PURITY MATCHED_STATUS SAMPLE_TYPE
+2663            30        Matched     Primary
+10327           30        Matched     Primary
+> 
+> df_tsne = cbind(df_tsne, samples2)
+> table(rownames(df_tsne) %in% names(mb))
+
+TRUE 
+ 785 
+> df_tsne$mb = mb[match(rownames(df_tsne), names(mb))]
+> dim(df_tsne)
+[1] 785  21
+> df_tsne[1:2,]
+                         X1        X2   X1.PCA   X2.PCA PATIENT_ID
+P.0002753.T01.IM3 -8.914268 -10.10125 16.51352 1.727564  P-0002753
+P.0011239.T02.IM5 12.669534  22.63619 -5.37728 7.090687  P-0011239
+                          SAMPLE_ID SAMPLE_COLLECTION_SOURCE
+P.0002753.T01.IM3 P-0002753-T01-IM3                 In-House
+P.0011239.T02.IM5 P-0011239-T02-IM5                  Outside
+                  SPECIMEN_PRESERVATION_TYPE SPECIMEN_TYPE DNA_INPUT
+P.0002753.T01.IM3                       FFPE        Biopsy       250
+P.0011239.T02.IM5                       FFPE     Resection       250
+                  SAMPLE_COVERAGE TUMOR_PURITY MATCHED_STATUS SAMPLE_TYPE
+P.0002753.T01.IM3             546           30        Matched     Primary
+P.0011239.T02.IM5             938           30        Matched     Primary
+                      PRIMARY_SITE METASTATIC_SITE SAMPLE_CLASS ONCOTREE_CODE
+P.0002753.T01.IM3            Liver  Not Applicable        Tumor           HCC
+P.0011239.T02.IM5 Transverse Colon  Not Applicable        Tumor          COAD
+                           CANCER_TYPE     CANCER_TYPE_DETAILED mb
+P.0002753.T01.IM3 Hepatobiliary Cancer Hepatocellular Carcinoma  5
+P.0011239.T02.IM5    Colorectal Cancer     Colon Adenocarcinoma 64
+> 
+> # ---------------------------------------------------------------------------
+> # setup color scheme
+> # ---------------------------------------------------------------------------
+> 
+> top10 = sort(table(df_tsne$CANCER_TYPE), decreasing=TRUE)[1:10]
+> top10
+
+Non-Small Cell Lung Cancer          Colorectal Cancer 
+                       170                        133 
+             Breast Cancer             Bladder Cancer 
+                        80                         65 
+                  Melanoma                     Glioma 
+                        41                         39 
+    Esophagogastric Cancer       Head and Neck Cancer 
+                        28                         26 
+         Pancreatic Cancer       Renal Cell Carcinoma 
+                        21                         19 
+> 
+> df_tsne$cancerType = rep("Others", nrow(df_tsne))
+> w2kp = which(df_tsne$CANCER_TYPE %in% names(top10))
+> 
+> df_tsne$cancerType[w2kp] = df_tsne$CANCER_TYPE[w2kp]
+> table(df_tsne$cancerType)
+
+            Bladder Cancer              Breast Cancer 
+                        65                         80 
+         Colorectal Cancer     Esophagogastric Cancer 
+                       133                         28 
+                    Glioma       Head and Neck Cancer 
+                        39                         26 
+                  Melanoma Non-Small Cell Lung Cancer 
+                        41                        170 
+                    Others          Pancreatic Cancer 
+                       163                         21 
+      Renal Cell Carcinoma 
+                        19 
+> 
+> .set_color_11 <- function() {
++   myColors <- c( "dodgerblue2",
++                  "green4", 
++                  "black",
++                  "#6A3D9A", # purple
++                  "#FF7F00", # orange
++                  "yellow", 
++                  "tan4",
++                  "#FB9A99", # pink
++                  "grey",
++                  "orchid",
++                  "red")
++   id <- sort(unique(df_tsne$cancerType))
++   names(myColors)<-id
++   scale_colour_manual(name = "cancer type", values = myColors)
++ }
+> 
+> # ---------------------------------------------------------------------------
+> # plot it
+> # ---------------------------------------------------------------------------
+> 
+> gp1 = ggplot(df_tsne, aes(X1,X2,col=cancerType)) + 
++   geom_point(size=0.8,alpha=0.7) + .set_color_11() + 
++   guides(color = guide_legend(override.aes = list(size=3)))
+> 
+> gp2 = ggplot(df_tsne, aes(X1.PCA,X2.PCA,col=cancerType)) + 
++   geom_point(size=0.8,alpha=0.7) + .set_color_11() + 
++   guides(color = guide_legend(override.aes = list(size=3)))
+> 
+> ggsave(sprintf("../figures/_tSNE_bottleneck_redraw/test_%s.png", bnk), gp1, 
++        width=4.9, height=2.9, units="in")
+> 
+> ggsave(sprintf("../figures/_tSNE_bottleneck_redraw/test_%s_PCs.png", bnk), gp2, 
++        width=4.9, height=2.9, units="in")
+> 
+> # ---------------------------------------------------------------------------
+> # plot based on mutation burden
+> # ---------------------------------------------------------------------------
+> 
+> gp1 = ggplot(df_tsne, aes(X1,X2,col=log10(mb+1))) + 
++   geom_point(size=0.8,alpha=0.7) + 
++   scale_colour_gradientn(colours = terrain.colors(10)[1:8]) +
++   guides(color = guide_legend(override.aes = list(size=3)))
+> 
+> gp2 = ggplot(df_tsne, aes(X1.PCA,X2.PCA,col=log10(mb+1))) + 
++   geom_point(size=0.8,alpha=0.7) + 
++   scale_colour_gradientn(colours = terrain.colors(10)[1:8]) +
++   guides(color = guide_legend(override.aes = list(size=3)))
+> 
+> ggsave(sprintf("../figures/_tSNE_bottleneck_redraw/test_%s_mb.png", bnk), gp1, 
++        width=4.3, height=2.9, units="in")
+> 
+> ggsave(sprintf("../figures/_tSNE_bottleneck_redraw/test_%s_mb_PCs.png", bnk), gp2, 
++        width=4.3, height=2.9, units="in")
+> 
+> sessionInfo()
+R version 3.5.2 (2018-12-20)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: macOS  10.15.1
+
+Matrix products: default
+BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] ggplot2_3.2.0 Rtsne_0.15   
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_1.0.1       digest_0.6.19    withr_2.1.2      crayon_1.3.4    
+ [5] dplyr_0.8.3      assertthat_0.2.1 grid_3.5.2       R6_2.4.0        
+ [9] gtable_0.3.0     magrittr_1.5     scales_1.0.0     pillar_1.4.1    
+[13] rlang_0.4.0      lazyeval_0.2.2   labeling_0.3     tools_3.5.2     
+[17] glue_1.3.1       purrr_0.3.2      munsell_0.5.0    compiler_3.5.2  
+[21] pkgconfig_2.0.2  colorspace_1.4-1 tidyselect_0.2.5 tibble_2.1.3    
+> q(save="no")
+> proc.time()
+   user  system elapsed 
+  7.189   0.224   7.841 

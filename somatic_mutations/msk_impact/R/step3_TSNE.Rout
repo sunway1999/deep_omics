@@ -1,0 +1,214 @@
+
+R version 3.5.2 (2018-12-20) -- "Eggshell Igloo"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> library(Rtsne)
+> library(ggplot2)
+> 
+> # ---------------------------------------------------------------------------
+> # read in clinical information per sample
+> # ---------------------------------------------------------------------------
+> 
+> samples = read.table("../msk_impact_2017/data_clinical_sample.txt", 
++                         header=TRUE, sep="\t", as.is=TRUE, quote="",
++                         comment.char = "", skip=4)
+> dim(samples)
+[1] 10945    16
+> head(samples)
+  PATIENT_ID         SAMPLE_ID SAMPLE_COLLECTION_SOURCE
+1  P-0000004 P-0000004-T01-IM3                  Outside
+2  P-0000015 P-0000015-T01-IM3                 In-House
+3  P-0000023 P-0000023-T01-IM3                 In-House
+4  P-0000024 P-0000024-T01-IM3                 In-House
+5  P-0000025 P-0000025-T02-IM5                 In-House
+6  P-0000025 P-0000025-T01-IM3                 In-House
+  SPECIMEN_PRESERVATION_TYPE SPECIMEN_TYPE DNA_INPUT SAMPLE_COVERAGE
+1                       FFPE        Biopsy       250             428
+2                       FFPE        Biopsy       198             281
+3                       FFPE        Biopsy       250             454
+4                       FFPE     Resection       250            1016
+5                       FFPE        Biopsy       250            1147
+6                       FFPE     Resection       250            1161
+  TUMOR_PURITY MATCHED_STATUS SAMPLE_TYPE PRIMARY_SITE METASTATIC_SITE
+1           50        Matched     Primary       Breast  Not Applicable
+2           40        Matched  Metastasis       Breast           Liver
+3           30        Matched     Primary   Peritoneum  Not Applicable
+4           40        Matched  Metastasis       Uterus            Lung
+5           30        Matched  Metastasis       Uterus      Peritoneum
+6           NA        Matched     Primary       Uterus  Not Applicable
+  SAMPLE_CLASS ONCOTREE_CODE        CANCER_TYPE
+1        Tumor           IDC      Breast Cancer
+2        Tumor           IDC      Breast Cancer
+3        Tumor        PEMESO       Mesothelioma
+4        Tumor           UEC Endometrial Cancer
+5        Tumor           USC Endometrial Cancer
+6        Tumor           USC Endometrial Cancer
+                                         CANCER_TYPE_DETAILED
+1                            Breast Invasive Ductal Carcinoma
+2                            Breast Invasive Ductal Carcinoma
+3                                     Peritoneal Mesothelioma
+4                              Uterine Endometrioid Carcinoma
+5 Uterine Serous Carcinoma/Uterine Papillary Serous Carcinoma
+6 Uterine Serous Carcinoma/Uterine Papillary Serous Carcinoma
+> 
+> # ---------------------------------------------------------------------------
+> # read in mutation data
+> # ---------------------------------------------------------------------------
+> 
+> bn = list.files(path="../results", pattern = "_bottleneck_train.txt", 
++                 full.names=TRUE)
+> bn
+ [1] "../results/model_20_400_200_bs_32_lr_0.0005_e_10_layer_2_bottleneck_train.txt"
+ [2] "../results/model_20_400_200_bs_32_lr_0.0005_e_50_layer_2_bottleneck_train.txt"
+ [3] "../results/model_20_400_200_bs_32_lr_0.001_e_10_layer_2_bottleneck_train.txt" 
+ [4] "../results/model_20_400_200_bs_32_lr_0.001_e_50_layer_2_bottleneck_train.txt" 
+ [5] "../results/model_20_400_bs_32_lr_0.0005_e_10_layer_1_bottleneck_train.txt"    
+ [6] "../results/model_20_400_bs_32_lr_0.0005_e_50_layer_1_bottleneck_train.txt"    
+ [7] "../results/model_20_400_bs_32_lr_0.001_e_10_layer_1_bottleneck_train.txt"     
+ [8] "../results/model_20_400_bs_32_lr_0.001_e_50_layer_1_bottleneck_train.txt"     
+ [9] "../results/model_20_600_bs_32_lr_0.0005_e_10_layer_1_bottleneck_train.txt"    
+[10] "../results/model_20_600_bs_32_lr_0.0005_e_50_layer_1_bottleneck_train.txt"    
+[11] "../results/model_20_600_bs_32_lr_0.001_e_10_layer_1_bottleneck_train.txt"     
+[12] "../results/model_20_600_bs_32_lr_0.001_e_50_layer_1_bottleneck_train.txt"     
+> bn.label = gsub("../results/", "", bn, fixed=TRUE)
+> bn.label = gsub("_bottleneck_train.txt", "", bn.label)
+> 
+> datL = list()
+> 
+> for(k in 1:length(bn)){
++   dat1 = read.csv(bn[k])
++   rownames(dat1) = dat1$X
++   dat1 = data.matrix(dat1[,-1])
++   datL[[bn.label[k]]] = dat1
++ }
+> 
+> dim(datL[[1]])
+[1] 3137   20
+> datL[[1]][1:2,]
+                     X0     X1    X2    X3 X4    X5    X6    X7    X8    X9
+P.0001736.T01.IM3 2.901 1.3200 5.393 2.898  0 3.432 4.578 1.759 1.694 4.935
+P.0006150.T01.IM5 3.454 0.9402 3.315 4.728  0 1.611 2.526 1.488 5.071 1.013
+                    X10    X11   X12 X13   X14   X15     X16   X17   X18   X19
+P.0001736.T01.IM3 1.658 0.8229 3.515   0 2.241 3.749 2.98700 4.111 0.527 2.587
+P.0006150.T01.IM5 3.018 2.7250 1.317   0 4.451 3.671 0.09817 3.529 2.326 2.606
+> 
+> # ---------------------------------------------------------------------------
+> # check how often a bottole neck node has sd almost 0
+> # ---------------------------------------------------------------------------
+> 
+> for(k in 1:length(bn.label)){
++   bnk = bn.label[k]
++   dat1 = datL[[bnk]]
++   dim(dat1)
++   dat1[1:2,]
++   apply(dat1, 2, sd)
++   
++   dat2 = unique(dat1)
++   dim(dat1)
++   dim(dat2)
++   
++   set.seed(100)
++   date()
++   tsne = Rtsne(dat2, pca = FALSE)
++   date()
++   
++   df_tsne = data.frame(tsne$Y)
++   rownames(df_tsne) = rownames(dat2)
++   sampleID = gsub("-", ".", samples$SAMPLE_ID, fixed=TRUE)
++   samples2 = samples[match(rownames(dat2), sampleID),]
++   
++   dim(df_tsne)
++   df_tsne[1:2,]
++   
++   dim(samples2)
++   samples2[1:2,]
++   
++   df_tsne = cbind(df_tsne, samples2)
++   dim(df_tsne)
++   df_tsne[1:2,]
++   
++   table(rownames(df_tsne) == gsub("-", ".", df_tsne$SAMPLE_ID, fixed=TRUE))
++   
++   top10 = sort(table(df_tsne$CANCER_TYPE), decreasing=TRUE)[1:10]
++   top10
++   
++   df_tsne$cancerType = rep("Others", nrow(df_tsne))
++   w2kp = which(df_tsne$CANCER_TYPE %in% names(top10))
++   
++   df_tsne$cancerType[w2kp] = df_tsne$CANCER_TYPE[w2kp]
++   table(df_tsne$cancerType)
++   
++   
++   .set_color_11 <- function() {
++     myColors <- c( "dodgerblue2",
++                    "green4", 
++                    "#6A3D9A", # purple
++                    "#FF7F00", # orange
++                    "black",
++                    "yellow", 
++                    "tan4",
++                    "grey",
++                    "#FB9A99", # pink
++                    "orchid",
++                    "red")
++     id <- sort(unique(df_tsne$cancerType))
++     names(myColors)<-id
++     scale_colour_manual(name = "cancer type", values = myColors)
++   }
++   
++   
++   gp1 = ggplot(df_tsne, aes(X1,X2,col=cancerType)) + 
++     geom_point(size=0.8,alpha=0.7) + theme_classic() + 
++     .set_color_11() + 
++     guides(color = guide_legend(override.aes = list(size=3)))
++   
++   ggsave(sprintf("../figures/_tSNE_bottleneck/%s.png", bnk), gp1, 
++          width=7, height=5, units="in")
++ }
+> 
+> 
+> sessionInfo()
+R version 3.5.2 (2018-12-20)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: macOS Mojave 10.14.6
+
+Matrix products: default
+BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] ggplot2_3.2.0 Rtsne_0.15   
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_1.0.1       digest_0.6.19    withr_2.1.2      crayon_1.3.4    
+ [5] dplyr_0.8.3      assertthat_0.2.1 grid_3.5.2       R6_2.4.0        
+ [9] gtable_0.3.0     magrittr_1.5     scales_1.0.0     pillar_1.4.1    
+[13] rlang_0.4.0      lazyeval_0.2.2   labeling_0.3     tools_3.5.2     
+[17] glue_1.3.1       purrr_0.3.2      munsell_0.5.0    compiler_3.5.2  
+[21] pkgconfig_2.0.2  colorspace_1.4-1 tidyselect_0.2.5 tibble_2.1.3    
+> q(save="no")
+> proc.time()
+   user  system elapsed 
+ 95.436   1.304  97.238 

@@ -1,0 +1,224 @@
+
+R version 3.5.2 (2018-12-20) -- "Eggshell Igloo"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> # ---------------------------------------------------------------------------
+> # after running auto-encoders using the code in python folder
+> # using this code to check the results
+> # ---------------------------------------------------------------------------
+> 
+> # ---------------------------------------------------------------------------
+> # read in clinical information per sample
+> # ---------------------------------------------------------------------------
+> 
+> samples = read.table("../msk_impact_2017/data_clinical_sample.txt", 
++                         header=TRUE, sep="\t", as.is=TRUE, quote="",
++                         comment.char = "", skip=4)
+> dim(samples)
+[1] 10945    16
+> head(samples)
+  PATIENT_ID         SAMPLE_ID SAMPLE_COLLECTION_SOURCE
+1  P-0000004 P-0000004-T01-IM3                  Outside
+2  P-0000015 P-0000015-T01-IM3                 In-House
+3  P-0000023 P-0000023-T01-IM3                 In-House
+4  P-0000024 P-0000024-T01-IM3                 In-House
+5  P-0000025 P-0000025-T02-IM5                 In-House
+6  P-0000025 P-0000025-T01-IM3                 In-House
+  SPECIMEN_PRESERVATION_TYPE SPECIMEN_TYPE DNA_INPUT SAMPLE_COVERAGE
+1                       FFPE        Biopsy       250             428
+2                       FFPE        Biopsy       198             281
+3                       FFPE        Biopsy       250             454
+4                       FFPE     Resection       250            1016
+5                       FFPE        Biopsy       250            1147
+6                       FFPE     Resection       250            1161
+  TUMOR_PURITY MATCHED_STATUS SAMPLE_TYPE PRIMARY_SITE METASTATIC_SITE
+1           50        Matched     Primary       Breast  Not Applicable
+2           40        Matched  Metastasis       Breast           Liver
+3           30        Matched     Primary   Peritoneum  Not Applicable
+4           40        Matched  Metastasis       Uterus            Lung
+5           30        Matched  Metastasis       Uterus      Peritoneum
+6           NA        Matched     Primary       Uterus  Not Applicable
+  SAMPLE_CLASS ONCOTREE_CODE        CANCER_TYPE
+1        Tumor           IDC      Breast Cancer
+2        Tumor           IDC      Breast Cancer
+3        Tumor        PEMESO       Mesothelioma
+4        Tumor           UEC Endometrial Cancer
+5        Tumor           USC Endometrial Cancer
+6        Tumor           USC Endometrial Cancer
+                                         CANCER_TYPE_DETAILED
+1                            Breast Invasive Ductal Carcinoma
+2                            Breast Invasive Ductal Carcinoma
+3                                     Peritoneal Mesothelioma
+4                              Uterine Endometrioid Carcinoma
+5 Uterine Serous Carcinoma/Uterine Papillary Serous Carcinoma
+6 Uterine Serous Carcinoma/Uterine Papillary Serous Carcinoma
+> 
+> # ---------------------------------------------------------------------------
+> # read in mutation data
+> # ---------------------------------------------------------------------------
+> 
+> bn = list.files(path="../results", pattern = "_bottleneck_train.txt", 
++                 full.names=TRUE)
+> bn
+ [1] "../results/model_20_400_200_bs_32_lr_0.0005_e_10_layer_2_bottleneck_train.txt"
+ [2] "../results/model_20_400_200_bs_32_lr_0.0005_e_50_layer_2_bottleneck_train.txt"
+ [3] "../results/model_20_400_200_bs_32_lr_0.001_e_10_layer_2_bottleneck_train.txt" 
+ [4] "../results/model_20_400_200_bs_32_lr_0.001_e_50_layer_2_bottleneck_train.txt" 
+ [5] "../results/model_20_400_bs_32_lr_0.0005_e_10_layer_1_bottleneck_train.txt"    
+ [6] "../results/model_20_400_bs_32_lr_0.0005_e_50_layer_1_bottleneck_train.txt"    
+ [7] "../results/model_20_400_bs_32_lr_0.001_e_10_layer_1_bottleneck_train.txt"     
+ [8] "../results/model_20_400_bs_32_lr_0.001_e_50_layer_1_bottleneck_train.txt"     
+ [9] "../results/model_20_600_bs_32_lr_0.0005_e_10_layer_1_bottleneck_train.txt"    
+[10] "../results/model_20_600_bs_32_lr_0.0005_e_50_layer_1_bottleneck_train.txt"    
+[11] "../results/model_20_600_bs_32_lr_0.001_e_10_layer_1_bottleneck_train.txt"     
+[12] "../results/model_20_600_bs_32_lr_0.001_e_50_layer_1_bottleneck_train.txt"     
+> 
+> datL = list()
+> 
+> for(b1 in bn){
++   dat1 = read.csv(b1)
++   rownames(dat1) = dat1$X
++   dat1 = data.matrix(dat1[,-1])
++   datL[[b1]] = dat1
++ }
+> 
+> dim(datL[[1]])
+[1] 3137   20
+> datL[[1]][1:2,]
+                     X0     X1    X2    X3 X4    X5    X6    X7    X8    X9
+P.0001736.T01.IM3 2.901 1.3200 5.393 2.898  0 3.432 4.578 1.759 1.694 4.935
+P.0006150.T01.IM5 3.454 0.9402 3.315 4.728  0 1.611 2.526 1.488 5.071 1.013
+                    X10    X11   X12 X13   X14   X15     X16   X17   X18   X19
+P.0001736.T01.IM3 1.658 0.8229 3.515   0 2.241 3.749 2.98700 4.111 0.527 2.587
+P.0006150.T01.IM5 3.018 2.7250 1.317   0 4.451 3.671 0.09817 3.529 2.326 2.606
+> 
+> # ---------------------------------------------------------------------------
+> # check how often a bottole neck node has sd almost 0
+> # ---------------------------------------------------------------------------
+> 
+> fun1 <- function(x){
++   length(which(apply(x, 2, sd)  < 1e-5))
++ }
+> 
+> table(sapply(datL, fun1))
+
+0 1 5 
+9 2 1 
+> sapply(datL, fun1)
+../results/model_20_400_200_bs_32_lr_0.0005_e_10_layer_2_bottleneck_train.txt 
+                                                                            1 
+../results/model_20_400_200_bs_32_lr_0.0005_e_50_layer_2_bottleneck_train.txt 
+                                                                            0 
+ ../results/model_20_400_200_bs_32_lr_0.001_e_10_layer_2_bottleneck_train.txt 
+                                                                            5 
+ ../results/model_20_400_200_bs_32_lr_0.001_e_50_layer_2_bottleneck_train.txt 
+                                                                            1 
+    ../results/model_20_400_bs_32_lr_0.0005_e_10_layer_1_bottleneck_train.txt 
+                                                                            0 
+    ../results/model_20_400_bs_32_lr_0.0005_e_50_layer_1_bottleneck_train.txt 
+                                                                            0 
+     ../results/model_20_400_bs_32_lr_0.001_e_10_layer_1_bottleneck_train.txt 
+                                                                            0 
+     ../results/model_20_400_bs_32_lr_0.001_e_50_layer_1_bottleneck_train.txt 
+                                                                            0 
+    ../results/model_20_600_bs_32_lr_0.0005_e_10_layer_1_bottleneck_train.txt 
+                                                                            0 
+    ../results/model_20_600_bs_32_lr_0.0005_e_50_layer_1_bottleneck_train.txt 
+                                                                            0 
+     ../results/model_20_600_bs_32_lr_0.001_e_10_layer_1_bottleneck_train.txt 
+                                                                            0 
+     ../results/model_20_600_bs_32_lr_0.001_e_50_layer_1_bottleneck_train.txt 
+                                                                            0 
+> 
+> # ---------------------------------------------------------------------------
+> # evaluate similarites across samples
+> # ---------------------------------------------------------------------------
+> 
+> ndim = ncol(datL[[1]])
+> ncf  = length(bn)
+> 
+> aveR2 = medR2 = q1R2 = q3R2 = minR2 = maxR2 = matrix(NA, nrow=ncf, ncol=ncf)
+> 
+> for(i in 1:ncf){
++   for(j in 1:ncf){
++     if(i == j) next
++     
++     R2ij = rep(NA, ndim)
++     Xj   = datL[[j]]
++     
++     for(k in 1:ndim){
++       yk = datL[[i]][,k]
++       if(sd(yk) < 1e-5){ next }
++       
++       lmijk = summary(lm(yk ~ Xj))
++       R2ij[k] = lmijk$r.squared
++     }
++     
++     aveR2[i,j] = mean(R2ij, na.rm=TRUE)
++     minR2[i,j] = min(R2ij,  na.rm=TRUE)
++     maxR2[i,j] = max(R2ij,  na.rm=TRUE)
++     
++     qsij       = quantile(R2ij, probs=c(0.25, 0.5, 0.75), na.rm=TRUE)
++     q1R2[i,j]  = qsij[1]
++     medR2[i,j] = qsij[2]
++     q3R2[i,j]  = qsij[3]
++   }
++ }
+> 
+> summary(c(aveR2))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+ 0.4132  0.5123  0.5392  0.5405  0.5785  0.6466      12 
+> summary(c(minR2))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+0.03033 0.24564 0.32451 0.29539 0.38980 0.47730      12 
+> summary(c(q1R2))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+ 0.3210  0.4502  0.4896  0.4851  0.5205  0.6331      12 
+> summary(c(medR2))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+ 0.3998  0.5220  0.5541  0.5511  0.5844  0.6809      12 
+> summary(c(q3R2))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+ 0.5050  0.5804  0.6134  0.6106  0.6428  0.7209      12 
+> summary(c(maxR2))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+ 0.5277  0.6696  0.7017  0.7046  0.7460  0.8444      12 
+> 
+> 
+> sessionInfo()
+R version 3.5.2 (2018-12-20)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: macOS Mojave 10.14.6
+
+Matrix products: default
+BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+loaded via a namespace (and not attached):
+[1] compiler_3.5.2
+> q(save="no")
+> proc.time()
+   user  system elapsed 
+  9.595   0.658  10.252 
