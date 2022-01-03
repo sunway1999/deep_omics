@@ -21,11 +21,11 @@ Two cell types microglia and endothelial cells have only a few nuclei and thus w
 
 ## data
 
-Processed data. The original data file `human_LGN_gene_expression_matrices_2018-06-14.zip` was downloaded from [here](http://celltypes.brain-map.org/api/v2/well_known_file_download/694416667). It was processed by a [R pipeline](https://github.com/Sun-lab/scRNAseq_pipelines/blob/master/MTG/human_MTG.Rmd) and the rendered html file can be viewed [here](https://htmlpreview.github.io/?https://github.com/Sun-lab/scRNAseq_pipelines/blob/master/MTG/human_MTG.html)
+Processed data. The original data file `human_LGN_gene_expression_matrices_2018-06-14.zip` was downloaded from [here](http://celltypes.brain-map.org/api/v2/well_known_file_download/694416667). It was processed by an [R pipeline](https://github.com/Sun-lab/scRNAseq_pipelines/blob/master/MTG/human_MTG.Rmd) and the rendered html file can be viewed [here](https://htmlpreview.github.io/?https://github.com/Sun-lab/scRNAseq_pipelines/blob/master/MTG/human_MTG.html)
 
 ## python
 
-Python code to construct autoencoder
+Python code to construct autoencoder.
 
 ## R
 
@@ -33,10 +33,10 @@ R code to
 
 1. `step1_prepare_eData.R`: redefine cells of each cell type by taking intersection of cell type labels from Hodge et al. and clustering results. 
 
-2. `step2_gene_simlarity.R`: generate gene-gene similarity
+2. `step2_gene_simlarity.R`: generate gene-gene similarity.
 
 3. `step3_save_clusters_to_csv.R`: save data in rds file to csv file. 
 
-4. `step4_check_results.R`: check the auto-encoder results
+4. `step4_check_results.R`: check the auto-encoder results.
 
 
