@@ -23,6 +23,11 @@ Two cell types microglia and endothelial cells have only a few nuclei and thus w
 
 Processed data. The original data file `human_LGN_gene_expression_matrices_2018-06-14.zip` was downloaded from [here](http://celltypes.brain-map.org/api/v2/well_known_file_download/694416667). It was processed by an [R pipeline](https://github.com/Sun-lab/scRNAseq_pipelines/blob/master/MTG/human_MTG.Rmd) and the rendered html file can be viewed [here](https://htmlpreview.github.io/?https://github.com/Sun-lab/scRNAseq_pipelines/blob/master/MTG/human_MTG.html)
 
+The raw data include counts from exons and introns separately. Since part of the reasons to prepare this pipeline is to prepare a reference for bulk RNA-seq data where gene expression are mostly measured on exonic regions. Here we only kept the exon counts.  
+
+We filtered out 70 outlier nuclei from the 15,928 nuclei, which defined as being percent_reads_unique lower than 50%, and ended up with 15,858 nuclei. 
+
+
 ## python
 
 Python code to construct autoencoder.
@@ -31,7 +36,22 @@ Python code to construct autoencoder.
 
 R code to 
 
-1. `step1_prepare_eData.R`: redefine cells of each cell type by taking intersection of cell type labels from Hodge et al. and clustering results. 
+1. `step1_prepare_eData.R`: 
+    - start with 4748 hvg's (highly varible genes).
+    - remove genes with 0 count in more than 80% of nuclei, ended up with 1916 genes.
+    - redefine cells of each cell type by taking intersection of cell type labels from Hodge et al. and clustering results. Here are the final cell/nuclei counts for each cell type. 
+
+```
+  Cell_Type nCells_All
+1       Inh       4131
+2       Exc      10434
+3     Oligo        310
+4       OPC        233
+5     Astro        287
+6     Micro         62
+7      Endo          8
+```
+
 
 2. `step2_gene_simlarity.R`: generate gene-gene similarity.
 

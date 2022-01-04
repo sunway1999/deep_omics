@@ -1,0 +1,671 @@
+
+R version 4.1.2 (2021-11-01) -- "Bird Hippie"
+Copyright (C) 2021 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin17.0 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> library(GOSemSim)
+
+GOSemSim v2.20.0  For help: https://yulab-smu.top/biomedical-knowledge-mining-book/
+
+If you use GOSemSim in published research, please cite:
+[36m-[39m Guangchuang Yu. Gene Ontology Semantic Similarity Analysis Using GOSemSim. In: Kidder B. (eds) Stem Cell Transcriptional Networks. Methods in Molecular Biology, 2020, 2117:207-215. Humana, New York, NY. doi:10.1007/978-1-0716-0301-7_11
+[36m-[39m Guangchuang Yu, Fei Li, Yide Qin, Xiaochen Bo, Yibo Wu, Shengqi Wang. GOSemSim: an R package for measuring semantic similarity among GO terms and gene products Bioinformatics 2010, 26(7):976-978. doi:10.1093/bioinformatics/btq064
+
+
+> library(data.table)
+> library(reshape2)
+
+Attaching package: ‘reshape2’
+
+The following objects are masked from ‘package:data.table’:
+
+    dcast, melt
+
+> library(ggplot2)
+> library(fgsea)
+> library(ggpointdensity)
+> library(viridis)
+Loading required package: viridisLite
+> 
+> # -------------------------------------------------------------------------
+> # read in gene information
+> # -------------------------------------------------------------------------
+> 
+> genes = as.data.frame(fread("../data/gene_info.txt.gz"))
+> dim(genes)
+[1] 1916   29
+> genes[1:2, c(1:6, ncol(genes))]
+   gene chromosome entrez_id                               gene_name
+1 AADAT          4     51166           aminoadipate aminotransferase
+2 AASDH          4    132949 aminoadipate-semialdehyde dehydrogenase
+  mouse_homologenes is_feature_control ensembl_gene_id
+1             Aadat              FALSE ENSG00000109576
+2             Aasdh              FALSE ENSG00000157426
+> names(genes)
+ [1] "gene"                  "chromosome"            "entrez_id"            
+ [4] "gene_name"             "mouse_homologenes"     "is_feature_control"   
+ [7] "mean_counts"           "log10_mean_counts"     "n_cells_by_counts"    
+[10] "pct_dropout_by_counts" "total_counts"          "log10_total_counts"   
+[13] "n_cells_counts"        "pct_dropout_counts"    "feature_symbol"       
+[16] "sc3_gene_filter"       "sc3_5_markers_clusts"  "sc3_5_markers_padj"   
+[19] "sc3_5_markers_auroc"   "sc3_10_markers_clusts" "sc3_10_markers_padj"  
+[22] "sc3_10_markers_auroc"  "sc3_15_markers_clusts" "sc3_15_markers_padj"  
+[25] "sc3_15_markers_auroc"  "sc3_5_de_padj"         "sc3_10_de_padj"       
+[28] "sc3_15_de_padj"        "ensembl_gene_id"      
+> 
+> length(unique(genes$gene))
+[1] 1916
+> length(unique(genes$entrez_id))
+[1] 1916
+> length(unique(genes$ensembl_gene_id))
+[1] 1855
+> 
+> # ---------------------------------------------------------------------------
+> # calculate gene-gene similarity
+> # ---------------------------------------------------------------------------
+> 
+> hsGO = godata('org.Hs.eg.db', keytype = "SYMBOL", ont="BP", computeIC=FALSE) 
+Loading required package: org.Hs.eg.db
+Loading required package: AnnotationDbi
+Loading required package: stats4
+Loading required package: BiocGenerics
+
+Attaching package: ‘BiocGenerics’
+
+The following objects are masked from ‘package:stats’:
+
+    IQR, mad, sd, var, xtabs
+
+The following objects are masked from ‘package:base’:
+
+    anyDuplicated, append, as.data.frame, basename, cbind, colnames,
+    dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+    grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget,
+    order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
+    union, unique, unsplit, which.max, which.min
+
+Loading required package: Biobase
+Welcome to Bioconductor
+
+    Vignettes contain introductory material; view with
+    'browseVignettes()'. To cite Bioconductor, see
+    'citation("Biobase")', and for packages 'citation("pkgname")'.
+
+Loading required package: IRanges
+Loading required package: S4Vectors
+
+Attaching package: ‘S4Vectors’
+
+The following objects are masked from ‘package:data.table’:
+
+    first, second
+
+The following objects are masked from ‘package:base’:
+
+    expand.grid, I, unname
+
+
+Attaching package: ‘IRanges’
+
+The following object is masked from ‘package:data.table’:
+
+    shift
+
+
+preparing gene to GO mapping data...
+> 
+> str(hsGO)
+Formal class 'GOSemSimDATA' [package "GOSemSim"] with 6 slots
+  ..@ keys    : chr [1:63891] "A1BG" "A2M" "A2MP1" "NAT1" ...
+  ..@ ont     : chr "BP"
+  ..@ IC      : num(0) 
+  ..@ geneAnno:'data.frame':	147062 obs. of  4 variables:
+  .. ..$ SYMBOL  : chr [1:147062] "A1BG" "A2M" "A2M" "A2M" ...
+  .. ..$ GO      : chr [1:147062] "GO:0008150" "GO:0001869" "GO:0010951" "GO:0048863" ...
+  .. ..$ EVIDENCE: chr [1:147062] "ND" "IDA" "IEA" "IEA" ...
+  .. ..$ ONTOLOGY: chr [1:147062] "BP" "BP" "BP" "BP" ...
+  ..@ tcssdata: list()
+  ..@ metadata:'data.frame':	29 obs. of  2 variables:
+  .. ..$ name : chr [1:29] "DBSCHEMAVERSION" "Db type" "Supporting package" "DBSCHEMA" ...
+  .. ..$ value: chr [1:29] "2.1" "OrgDb" "AnnotationDbi" "HUMAN_DB" ...
+> dim(hsGO@geneAnno); hsGO@geneAnno[1:10,]
+[1] 147062      4
+     SYMBOL         GO EVIDENCE ONTOLOGY
+6      A1BG GO:0008150       ND       BP
+13      A2M GO:0001869      IDA       BP
+23      A2M GO:0010951      IEA       BP
+31      A2M GO:0048863      IEA       BP
+39     NAT1 GO:0006805      TAS       BP
+44     NAT2 GO:0006805      TAS       BP
+56 SERPINA3 GO:0006953      IEA       BP
+57 SERPINA3 GO:0006954      NAS       BP
+58 SERPINA3 GO:0010951      IBA       BP
+59 SERPINA3 GO:0019216      NAS       BP
+> apply(hsGO@geneAnno,2,function(xx) length(unique(xx)))
+  SYMBOL       GO EVIDENCE ONTOLOGY 
+   18722    12418       19        1 
+> 
+> w2kp = genes$gene %in% hsGO@geneAnno$SYMBOL
+> table(w2kp)
+w2kp
+FALSE  TRUE 
+  311  1605 
+> 
+> genes2use = genes$gene[which(w2kp)]
+> 
+> go_similarity_file = "../data/gene_similarity_go.rds"
+> 
+> if(file.exists(go_similarity_file)){
++   gS = readRDS(go_similarity_file)
++ }else{
++   gS = mgeneSim(genes2use, semData=hsGO, measure="Wang", 
++                 combine="BMA", verbose=TRUE)
++   saveRDS(gS, file=go_similarity_file)
++ }
+> 
+> dim(gS)
+[1] 1519 1519
+> gS[1:2,1:2]
+      AADAT AASDH
+AADAT 1.000 0.537
+AASDH 0.537 1.000
+> 
+> gSv = as.numeric(gS[upper.tri(gS)])
+> summary(gSv)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.0060  0.1050  0.1680  0.2033  0.2520  1.0000 
+> 
+> pdf("../figures/hist_gene_gene_similarity_go.pdf", width=4, height=3)
+> par(mar=c(5,4,1,1))
+> hist(gSv, main="", xlab="gene-gene similarity by GO terms")
+> dev.off()
+null device 
+          1 
+> 
+> 
+> # Get lower triangle of the correlation matrix
+> get_lower_tri<-function(cormat){
++   cormat[upper.tri(cormat)] <- NA
++   return(cormat)
++ }
+> # Get upper triangle of the correlation matrix
+> get_upper_tri <- function(cormat){
++   cormat[lower.tri(cormat)]<- NA
++   return(cormat)
++ }
+> 
+> reorder_cormat <- function(cormat){
++   # Use correlation between variables as distance
++   dd <- as.dist((1-cormat)/2)
++   hc <- hclust(dd)
++   cormat <-cormat[hc$order, hc$order]
++ }
+> 
+> cormat <- reorder_cormat(gS)
+> upper_tri <- get_upper_tri(cormat[1:500,1:500])
+> melted_cormat <- melt(upper_tri, na.rm = TRUE)
+> 
+> go_heat_all <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
++   geom_tile(color = "white")+
++   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
++                        midpoint = 0.25, limit = c(0,1), space = "Lab", 
++                        name="Similarity\nScore") +
++   theme_minimal() + theme(axis.title.x=element_blank(),
++                           axis.text.x=element_blank(),
++                           axis.ticks.x=element_blank(), 
++                           axis.title.y=element_blank(),
++                           axis.text.y=element_blank(),
++                           axis.ticks.y=element_blank())
+> 
+> pdf("../figures/gene_gene_similarity_go.pdf", width=8, height=7)
+> print(go_heat_all)
+> dev.off()
+null device 
+          1 
+> 
+> upper_tri <- get_upper_tri(cormat[401:420,401:420])
+> melted_cormat <- melt(upper_tri, na.rm = TRUE)
+> 
+> go_heat_20 <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
++   geom_tile(color = "white")+
++   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
++                        midpoint = 0.25, limit = c(0,1), space = "Lab", 
++                        name="Similarity\nScore") +
++   theme_minimal() + # minimal theme
++   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust = 1))+
++   coord_fixed() + theme(axis.title.x=element_blank(),
++                         axis.title.y=element_blank())
+> 
+> pdf("../figures/gene_gene_similarity_go_20.pdf", width=4, height=3)
+> print(go_heat_20)
+> dev.off()
+null device 
+          1 
+> 
+> # ---------------------------------------------------------------------------
+> # load pathway data
+> # ---------------------------------------------------------------------------
+> 
+> gmtfile_reactome  = "../../gene_annotation/c2.cp.reactome.v7.1.symbols.gmt"
+> pathways_reactome = gmtPathways(gmtfile_reactome)
+> class(pathways_reactome)
+[1] "list"
+> length(pathways_reactome)
+[1] 1532
+> summary(sapply(pathways_reactome, length))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   5.00   11.00   23.00   57.02   57.00 1470.00 
+> 
+> ugenes = sort(unique(unlist(pathways_reactome)))
+> length(ugenes)
+[1] 10807
+> 
+> tgenes = table(unlist(pathways_reactome))
+> sort(tgenes, decreasing=TRUE)[1:50]
+
+RPS27A  UBA52    UBB    UBC   GRB2    SRC   KRAS  MAPK1   HRAS   NRAS  CALM1 
+   276    275    270    265    140    126    112    110    108    107    106 
+ MAPK3   SOS1 PIK3R1  PSME2  PSMB8  PSMC1 PSMD14  PSMA2  PSMA5  PSMB1  PSMB7 
+   106    104    101    101    100    100    100     99     99     99     99 
+ PSMC2  PSMC3  PSMD1 PSMD11 PSMD12 PSMD13  PSMD2  PSMD3  PSMD6  PSMD7  PSMA1 
+    99     99     99     99     99     99     99     99     99     99     98 
+ PSMA3  PSMA4  PSMA6  PSMA7 PSMB10  PSMB2  PSMB3  PSMB4  PSMB5  PSMB6  PSMB9 
+    98     98     98     98     98     98     98     98     98     98     98 
+ PSMC4  PSMC5  PSMC6 PSMD10  PSMD4  PSMD5 
+    98     98     98     98     98     98 
+> summary(as.numeric(tgenes))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  1.000   3.000   4.000   8.083   8.000 276.000 
+> 
+> gene2path = matrix(0, nrow=length(ugenes), ncol=length(pathways_reactome))
+> rownames(gene2path) = ugenes
+> colnames(gene2path) = names(pathways_reactome)
+> 
+> for(k in 1:length(pathways_reactome)){
++   pk = pathways_reactome[[k]]
++   gene2path[which(ugenes %in% pk),k] = 1
++ }
+> 
+> dim(gene2path)
+[1] 10807  1532
+> gene2path[1:2,1:3]
+     REACTOME_GLYCOGEN_BREAKDOWN_GLYCOGENOLYSIS REACTOME_TRANSLATION
+A1BG                                          0                    0
+A1CF                                          0                    0
+     REACTOME_PYRIMIDINE_CATABOLISM
+A1BG                              0
+A1CF                              0
+> 
+> table(genes2use %in% ugenes)
+
+FALSE  TRUE 
+  560  1045 
+> 
+> gene2path = gene2path[which(ugenes %in% genes2use),]
+> dim(gene2path)
+[1] 1045 1532
+> gene2path[1:2,1:3]
+         REACTOME_GLYCOGEN_BREAKDOWN_GLYCOGENOLYSIS REACTOME_TRANSLATION
+AADAT                                             0                    0
+AASDHPPT                                          0                    0
+         REACTOME_PYRIMIDINE_CATABOLISM
+AADAT                                 0
+AASDHPPT                              0
+> 
+> NN = nrow(gene2path)
+> ugenes = rownames(gene2path)
+> table(colSums(gene2path) == sapply(pathways_reactome, length))
+
+FALSE 
+ 1532 
+> 
+> # ---------------------------------------------------------------------------
+> # calculate gene-gene similarity based on pathway data
+> # ---------------------------------------------------------------------------
+> 
+> react_similarity_file = "../data/gene_gene_pval_react.rds"
+> 
+> if(file.exists(react_similarity_file)){
++   gReact = readRDS("../data/gene_gene_pval_react.rds")
++ }else{
++   gReact = matrix(NA, nrow=length(genes2use), ncol=length(genes2use))
++   rownames(gReact) = colnames(gReact) = genes2use
++   
++   for(i in 1:(length(genes2use)-1)){
++     
++     if(i %% 100 == 0){ cat(i, date(), "\n")}
++     g1 = genes2use[i]
++     if(! g1 %in% ugenes){ next }
++     g1_idx = which(ugenes == g1)
++     
++     for(j in (i+1):length(genes2use)){
++       g2 = genes2use[j]
++       if(! g2 %in% ugenes){ next }
++       g2_idx = which(ugenes == g2)
++       
++       idx_path = which(colSums(gene2path[c(g1_idx,g2_idx),])==2)
++       num_path = length(idx_path)
++       
++       if(num_path > 0 ){
++         idx_gene = rowSums(gene2path[,idx_path,drop = FALSE]) == num_path
++         KK = sum(idx_gene)
++       }else{
++         KK = 0
++       }
++       
++       if( KK < 2 ){
++         if(KK == 0){prob = 1} else{stop("unexpected value for KK")}
++       } else {
++         prob = dhyper(
++           x = 2,       # num white balls drawn
++           m = KK,      # num white balls in urn
++           n = NN - KK, # num black balls in urn
++           k = 2        # num balls drawn
++         )
++       }
++       
++       gReact[i,j] = gReact[j,i] = prob
++     }
++   }
++   
++   saveRDS(gReact, file="../data/gene_gene_pval_react.rds")
++ }
+> 
+> dim(gReact)
+[1] 1605 1605
+> gReact[1:5,1:4]
+         AADAT AASDH AASDHPPT ABCD2
+AADAT       NA    NA        1     1
+AASDH       NA    NA       NA    NA
+AASDHPPT     1    NA       NA     1
+ABCD2        1    NA        1    NA
+ABCE1        1    NA        1     1
+> 
+> gS_react = 1 - gReact
+> diag(gS_react) = 1.0
+> dim(gS_react)
+[1] 1605 1605
+> gS_react[1:5,1:4]
+         AADAT AASDH AASDHPPT ABCD2
+AADAT        1    NA        0     0
+AASDH       NA     1       NA    NA
+AASDHPPT     0    NA        1     0
+ABCD2        0    NA        0     1
+ABCE1        0    NA        0     0
+> 
+> gSv_react = as.numeric(gS_react[upper.tri(gS_react)])
+> summary(gSv_react)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    0.0     0.0     0.0     0.1     0.0     1.0  741720 
+> 
+> pdf("../figures/hist_gene_gene_similarity_reactome.pdf", width=4, height=3)
+> par(mar=c(5,4,1,1))
+> hist(gSv_react, main="", xlab="gene-gene similarity by Reactome pathways")
+> dev.off()
+null device 
+          1 
+> 
+> gS_react0 = gS_react
+> gS_react0[which(is.na(gS_react))] = 0
+> 
+> cormat <- reorder_cormat(gS_react0)
+> upper_tri <- get_upper_tri(cormat[501:1000,501:1000])
+> melted_cormat <- melt(upper_tri, na.rm = TRUE)
+> dim(melted_cormat)
+[1] 125250      3
+> melted_cormat[1:4,]
+       Var1   Var2     value
+1     MRPL3  MRPL3 1.0000000
+501   MRPL3 MRPL16 0.9997195
+502  MRPL16 MRPL16 1.0000000
+1001  MRPL3 MRPL10 0.9997195
+> summary(melted_cormat$value)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+0.00000 0.00000 0.00000 0.09256 0.00000 1.00000 
+> 
+> reactome_heat_all <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
++   geom_tile(color = "white")+
++   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
++                        midpoint = 0.25, limit = c(0,1), space = "Lab", 
++                        name="Similarity\nScore") +
++   theme_minimal() + theme(axis.title.x=element_blank(),
++                           axis.text.x=element_blank(),
++                           axis.ticks.x=element_blank(), 
++                           axis.title.y=element_blank(),
++                           axis.text.y=element_blank(),
++                           axis.ticks.y=element_blank())
+> 
+> pdf("../figures/gene_gene_similarity_rectome.pdf", width=8, height=7)
+> print(reactome_heat_all)
+> dev.off()
+null device 
+          1 
+> 
+> upper_tri <- get_upper_tri(cormat[501:520,501:520])
+> melted_cormat <- melt(upper_tri, na.rm = TRUE)
+> 
+> reactome_heat_20 <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
++   geom_tile(color = "white")+
++   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
++                        midpoint = 0.25, limit = c(0,1), space = "Lab", 
++                        name="Similarity\nScore") +
++   theme_minimal() + # minimal theme
++   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust = 1))+
++   coord_fixed() + theme(axis.title.x=element_blank(),
++                         axis.title.y=element_blank())
+> 
+> pdf("../figures/gene_gene_similarity_rectome_20.pdf", width=4, height=3)
+> print(reactome_heat_20)
+> dev.off()
+null device 
+          1 
+> 
+> # ---------------------------------------------------------------------------
+> # combine gene-gene similarity
+> # ---------------------------------------------------------------------------
+> 
+> dim(gS)
+[1] 1519 1519
+> dim(gS_react)
+[1] 1605 1605
+> gS[1:3,1:3]
+         AADAT AASDH AASDHPPT
+AADAT    1.000 0.537    0.502
+AASDH    0.537 1.000    0.504
+AASDHPPT 0.502 0.504    1.000
+> gS_react[1:3,1:3]
+         AADAT AASDH AASDHPPT
+AADAT        1    NA        0
+AASDH       NA     1       NA
+AASDHPPT     0    NA        1
+> 
+> table(rownames(gS) %in% rownames(gS_react))
+
+TRUE 
+1519 
+> mat1 = match(rownames(gS), rownames(gS_react))
+> 
+> gS_combine = 0.5*(gS + gS_react[mat1,mat1])
+> wNA = which(is.na(gS_react[mat1,mat1]), arr.ind=TRUE)
+> gS_combine[wNA] = gS[wNA]
+> 
+> gSv_combine = as.numeric(gS_combine[upper.tri(gS_combine)])
+> summary(gSv_combine)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.0035  0.0750  0.1265  0.1868  0.2200  1.0000 
+> 
+> pdf("../figures/hist_gene_gene_similarity_combine.pdf", width=4, height=3)
+> par(mar=c(5,4,1,1))
+> hist(gSv_combine, main="", xlab="combined gene-gene similarity")
+> dev.off()
+null device 
+          1 
+> 
+> cormat <- reorder_cormat(gS_combine)
+> upper_tri <- get_upper_tri(cormat[501:1000,501:1000])
+> melted_cormat <- melt(upper_tri, na.rm = TRUE)
+> dim(melted_cormat)
+[1] 125250      3
+> melted_cormat[1:4,]
+       Var1   Var2     value
+1    POLR3C POLR3C 1.0000000
+501  POLR3C POLR3G 0.9244945
+502  POLR3G POLR3G 1.0000000
+1001 POLR3C   DRG1 0.2740000
+> summary(melted_cormat$value)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.0130  0.0890  0.1510  0.2305  0.2750  1.0000 
+> 
+> heat_all <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
++   geom_tile(color = "white")+
++   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
++                        midpoint = 0.25, limit = c(0,1), space = "Lab", 
++                        name="Similarity\nScore") +
++   theme_minimal() + theme(axis.title.x=element_blank(),
++                           axis.text.x=element_blank(),
++                           axis.ticks.x=element_blank(), 
++                           axis.title.y=element_blank(),
++                           axis.text.y=element_blank(),
++                           axis.ticks.y=element_blank())
+> 
+> pdf("../figures/gene_gene_similarity_combine.pdf", width=8, height=7)
+> print(heat_all)
+> dev.off()
+null device 
+          1 
+> 
+> upper_tri <- get_upper_tri(cormat[501:520,501:520])
+> melted_cormat <- melt(upper_tri, na.rm = TRUE)
+> 
+> heat_20 <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
++   geom_tile(color = "white")+
++   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
++                        midpoint = 0.25, limit = c(0,1), space = "Lab", 
++                        name="Similarity\nScore") +
++   theme_minimal() + # minimal theme
++   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust = 1))+
++   coord_fixed() + theme(axis.title.x=element_blank(),
++                         axis.title.y=element_blank())
+> 
+> pdf("../figures/gene_gene_similarity_combine_20.pdf", width=4, height=3)
+> print(heat_20)
+> dev.off()
+null device 
+          1 
+> 
+> # ---------------------------------------------------------------------------
+> # read in data and re-order genes based on annotations
+> # ---------------------------------------------------------------------------
+> 
+> dat = fread("../data/cts_all_but_Micro_Endo.txt.gz")
+Warning message:
+In fread("../data/cts_all_but_Micro_Endo.txt.gz") :
+  Detected 15395 column names but the data has 15396 columns (i.e. invalid file). Added 1 extra default column name for the first column which is guessed to be row names or an index. Use setnames() afterwards if this guess is not correct, or fix the file write command that created the file to create a valid file.
+> dim(dat)
+[1]  1916 15396
+> dat[1:2,1:5]
+      V1 F1S4_160106_001_B01 F1S4_160106_002_G01 F1S4_160106_003_C01
+1: AADAT                   0                   0                 284
+2: AASDH                   0                  47                   0
+   F1S4_160106_004_C01
+1:                   0
+2:                   0
+> 
+> table(genes$gene == dat$V1)
+
+TRUE 
+1916 
+> 
+> dim(cormat)
+[1] 1519 1519
+> cormat[1:2,1:2]
+           GAD1     KCNQ3
+GAD1  1.0000000 0.6794559
+KCNQ3 0.6794559 1.0000000
+> 
+> table(rownames(cormat) %in% dat$V1)
+
+TRUE 
+1519 
+> 
+> mat1 = match(rownames(cormat), dat$V1)
+> dat1 = dat[mat1,]
+> dim(dat1)
+[1]  1519 15396
+> dat1[1:2,1:5]
+      V1 F1S4_160106_001_B01 F1S4_160106_002_G01 F1S4_160106_003_C01
+1:  GAD1                2495                3230                 408
+2: KCNQ3                1465                   0                   0
+   F1S4_160106_004_C01
+1:                2151
+2:                   0
+> 
+> names(dat1)[1] = "gene_name"
+> fwrite(dat1, file="../data/cts_all_but_Micro_Endo_ordered_by_annotation.txt")
+> system("gzip ../data/cts_all_but_Micro_Endo_ordered_by_annotation.txt")
+> 
+> sessionInfo()
+R version 4.1.2 (2021-11-01)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Big Sur 10.16
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats4    stats     graphics  grDevices utils     datasets  methods  
+[8] base     
+
+other attached packages:
+ [1] org.Hs.eg.db_3.14.0  AnnotationDbi_1.56.2 IRanges_2.28.0      
+ [4] S4Vectors_0.32.3     Biobase_2.54.0       BiocGenerics_0.40.0 
+ [7] viridis_0.6.2        viridisLite_0.4.0    ggpointdensity_0.1.0
+[10] fgsea_1.20.0         ggplot2_3.3.5        reshape2_1.4.4      
+[13] data.table_1.14.2    GOSemSim_2.20.0     
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_1.0.7             lattice_0.20-45        GO.db_3.14.0          
+ [4] png_0.1-7              Biostrings_2.62.0      digest_0.6.29         
+ [7] assertthat_0.2.1       utf8_1.2.2             R6_2.5.1              
+[10] GenomeInfoDb_1.30.0    plyr_1.8.6             RSQLite_2.2.8         
+[13] httr_1.4.2             pillar_1.6.4           zlibbioc_1.40.0       
+[16] rlang_0.4.12           blob_1.2.2             R.oo_1.24.0           
+[19] R.utils_2.11.0         Matrix_1.3-4           labeling_0.4.2        
+[22] BiocParallel_1.28.2    stringr_1.4.0          RCurl_1.98-1.5        
+[25] bit_4.0.4              munsell_0.5.0          compiler_4.1.2        
+[28] pkgconfig_2.0.3        tidyselect_1.1.1       KEGGREST_1.34.0       
+[31] tibble_3.1.6           gridExtra_2.3          GenomeInfoDbData_1.2.7
+[34] fansi_0.5.0            crayon_1.4.2           dplyr_1.0.7           
+[37] withr_2.4.3            R.methodsS3_1.8.1      bitops_1.0-7          
+[40] grid_4.1.2             gtable_0.3.0           lifecycle_1.0.1       
+[43] DBI_1.1.1              magrittr_2.0.1         scales_1.1.1          
+[46] stringi_1.7.6          cachem_1.0.6           farver_2.1.0          
+[49] XVector_0.34.0         ellipsis_0.3.2         generics_0.1.1        
+[52] vctrs_0.3.8            fastmatch_1.1-3        tools_4.1.2           
+[55] bit64_4.0.5            glue_1.5.1             purrr_0.3.4           
+[58] parallel_4.1.2         fastmap_1.1.0          colorspace_2.0-2      
+[61] memoise_2.0.1         
+> q(save = "no")
+> proc.time()
+   user  system elapsed 
+ 20.805   1.627  23.006 

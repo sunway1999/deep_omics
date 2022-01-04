@@ -35,20 +35,21 @@ table(w2kp)
 
 genes2use = genes$gene[which(w2kp)]
 
-date()
-gS = mgeneSim(genes2use, semData=hsGO, measure="Wang", 
-              combine="BMA", verbose=TRUE)
-date()
+go_similarity_file = "../data/gene_similarity_go.rds"
 
-saveRDS(gS, file="../data/gene_similarity_go.rds")
-# gS = readRDS("../data/gene_similarity_go.rds")
+if(file.exists(go_similarity_file)){
+  gS = readRDS(go_similarity_file)
+}else{
+  gS = mgeneSim(genes2use, semData=hsGO, measure="Wang", 
+                combine="BMA", verbose=TRUE)
+  saveRDS(gS, file=go_similarity_file)
+}
 
 dim(gS)
 gS[1:2,1:2]
 
 gSv = as.numeric(gS[upper.tri(gS)])
 summary(gSv)
-
 
 pdf("../figures/hist_gene_gene_similarity_go.pdf", width=4, height=3)
 par(mar=c(5,4,1,1))
@@ -94,7 +95,7 @@ pdf("../figures/gene_gene_similarity_go.pdf", width=8, height=7)
 print(go_heat_all)
 dev.off()
 
-upper_tri <- get_upper_tri(cormat[81:100,81:100])
+upper_tri <- get_upper_tri(cormat[401:420,401:420])
 melted_cormat <- melt(upper_tri, na.rm = TRUE)
 
 go_heat_20 <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
@@ -115,7 +116,7 @@ dev.off()
 # load pathway data
 # ---------------------------------------------------------------------------
 
-gmtfile_reactome  = "../gene_annotation/c2.cp.reactome.v7.1.symbols.gmt"
+gmtfile_reactome  = "../../gene_annotation/c2.cp.reactome.v7.1.symbols.gmt"
 pathways_reactome = gmtPathways(gmtfile_reactome)
 class(pathways_reactome)
 length(pathways_reactome)
@@ -154,48 +155,54 @@ table(colSums(gene2path) == sapply(pathways_reactome, length))
 # calculate gene-gene similarity based on pathway data
 # ---------------------------------------------------------------------------
 
-gReact = matrix(NA, nrow=length(genes2use), ncol=length(genes2use))
-rownames(gReact) = colnames(gReact) = genes2use
+react_similarity_file = "../data/gene_gene_pval_react.rds"
 
-for(i in 1:(length(genes2use)-1)){
+if(file.exists(react_similarity_file)){
+  gReact = readRDS("../data/gene_gene_pval_react.rds")
+}else{
+  gReact = matrix(NA, nrow=length(genes2use), ncol=length(genes2use))
+  rownames(gReact) = colnames(gReact) = genes2use
   
-  if(i %% 100 == 0){ cat(i, date(), "\n")}
-  g1 = genes2use[i]
-  if(! g1 %in% ugenes){ next }
-  g1_idx = which(ugenes == g1)
-  
-  for(j in (i+1):length(genes2use)){
-    g2 = genes2use[j]
-    if(! g2 %in% ugenes){ next }
-    g2_idx = which(ugenes == g2)
-
-    idx_path = which(colSums(gene2path[c(g1_idx,g2_idx),])==2)
-    num_path = length(idx_path)
+  for(i in 1:(length(genes2use)-1)){
     
-    if(num_path > 0 ){
-      idx_gene = rowSums(gene2path[,idx_path,drop = FALSE]) == num_path
-      KK = sum(idx_gene)
-    }else{
-      KK = 0
+    if(i %% 100 == 0){ cat(i, date(), "\n")}
+    g1 = genes2use[i]
+    if(! g1 %in% ugenes){ next }
+    g1_idx = which(ugenes == g1)
+    
+    for(j in (i+1):length(genes2use)){
+      g2 = genes2use[j]
+      if(! g2 %in% ugenes){ next }
+      g2_idx = which(ugenes == g2)
+      
+      idx_path = which(colSums(gene2path[c(g1_idx,g2_idx),])==2)
+      num_path = length(idx_path)
+      
+      if(num_path > 0 ){
+        idx_gene = rowSums(gene2path[,idx_path,drop = FALSE]) == num_path
+        KK = sum(idx_gene)
+      }else{
+        KK = 0
+      }
+      
+      if( KK < 2 ){
+        if(KK == 0){prob = 1} else{stop("unexpected value for KK")}
+      } else {
+        prob = dhyper(
+          x = 2,       # num white balls drawn
+          m = KK,      # num white balls in urn
+          n = NN - KK, # num black balls in urn
+          k = 2        # num balls drawn
+        )
+      }
+      
+      gReact[i,j] = gReact[j,i] = prob
     }
-    
-    if( KK < 2 ){
-      if(KK == 0){prob = 1} else{stop("unexpected value for KK")}
-    } else {
-      prob = dhyper(
-        x = 2,       # num white balls drawn
-        m = KK,      # num white balls in urn
-        n = NN - KK, # num black balls in urn
-        k = 2        # num balls drawn
-      )
-    }
-    
-    gReact[i,j] = gReact[j,i] = prob
   }
+  
+  saveRDS(gReact, file="../data/gene_gene_pval_react.rds")
 }
 
-saveRDS(gReact, file="../data/gene_gene_pval_react.rds")
-# gReact = readRDS("../data/gene_gene_pval_react.rds")
 dim(gReact)
 gReact[1:5,1:4]
 
@@ -340,8 +347,8 @@ dim(dat1)
 dat1[1:2,1:5]
 
 names(dat1)[1] = "gene_name"
-fwrite(dat1, file="../data/cts_all_but_Micro_Endo_ordered.txt")
-system("gzip ../data/cts_all_but_Micro_Endo_ordered.txt")
+fwrite(dat1, file="../data/cts_all_but_Micro_Endo_ordered_by_annotation.txt")
+system("gzip ../data/cts_all_but_Micro_Endo_ordered_by_annotation.txt")
 
 sessionInfo()
 q(save = "no")

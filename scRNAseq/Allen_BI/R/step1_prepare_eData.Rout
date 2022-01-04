@@ -1,6 +1,6 @@
 
-R version 4.0.3 (2020-10-10) -- "Bunny-Wunnies Freak Out"
-Copyright (C) 2020 The R Foundation for Statistical Computing
+R version 4.1.2 (2021-11-01) -- "Bird Hippie"
+Copyright (C) 2021 The R Foundation for Statistical Computing
 Platform: x86_64-apple-darwin17.0 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -18,43 +18,19 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 Type 'q()' to quit R.
 
 > 
-> # ------------------------------------------------------------------
-> # here are the cell types 
-> # ------------------------------------------------------------------
-> 
-> # Middle Temporal Gyrus (MTG): This RNA-Seq data set is created from intact 
-> # nuclei derived from frozen human brain specimens, to survey cell type 
-> # diversity in the human middle temporal gyrus (MTG). In total, 15,928 nuclei 
-> # from 8 human tissue donors ranging in age from 24-66 years were analyzed. 
-> # Analysis of these transcriptional profiles reveals approximately 75 
-> # transcriptionally distinct cell types, subdivided into 45 inhibitory 
-> # neuron types, 24 excitatory neuron types, and 6 non-neuronal types.
-> 
-> # Exc: excitatory neurons, or glutamatergic neurons
-> # Inh: inhibitory neurons, or GABAergic inhibitory interneurons
-> # Astro: astrocytes
-> # Endo: endothelial cells
-> # Micro: microglia
-> # Oligo: oligodendrocytes
-> # OPC: oligodendrocyte precursor cells
+> # the file "final_sce_hvg.rds" is too large (174.3 Mb) to saved in GitHub
+> # so it is saved in a local folder, together with clustering results: 
+> # "final_hvg_clust.rds". 
 > 
 > MTG_dir = "~/research/scRNAseq/data/Allen_BI/"
 > MTG_dir = paste0(MTG_dir, "human_MTG_gene_expression_matrices_2018-06-14")
-> setwd(MTG_dir)
 > 
 > library('org.Hs.eg.db')
 Loading required package: AnnotationDbi
 Loading required package: stats4
 Loading required package: BiocGenerics
-Loading required package: parallel
 
 Attaching package: ‘BiocGenerics’
-
-The following objects are masked from ‘package:parallel’:
-
-    clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
-    clusterExport, clusterMap, parApply, parCapply, parLapply,
-    parLapplyLB, parRapply, parSapply, parSapplyLB
 
 The following objects are masked from ‘package:stats’:
 
@@ -81,9 +57,9 @@ Loading required package: S4Vectors
 
 Attaching package: ‘S4Vectors’
 
-The following object is masked from ‘package:base’:
+The following objects are masked from ‘package:base’:
 
-    expand.grid
+    expand.grid, I, unname
 
 
 > 
@@ -91,8 +67,8 @@ The following object is masked from ‘package:base’:
 > # load clustering results 
 > # ------------------------------------------------------------------
 > 
-> sce      = readRDS("final_sce_hvg.rds")
-> clusters = readRDS("final_hvg_clust.rds")
+> sce      = readRDS(file.path(MTG_dir, "final_sce_hvg.rds"))
+> clusters = readRDS(file.path(MTG_dir, "final_hvg_clust.rds"))
 > 
 > dim(sce)
 Loading required package: SingleCellExperiment
@@ -221,8 +197,9 @@ F1S4_160106_001_C01   H200.1030
   14     0    0 1798    1     0     0    0      38
   15     0    0 1654    1     0     0    0      28
 > 
-> # based on mannual examinaion of human_MTG.html, we choose to use the 
-> # clustering result of kmeans with 15 clusters. 
+> # based on manual examination of human_MTG.html, we choose to use the 
+> # clustering result of kmeans with 15 clusters.
+> 
 > clusters$cluster_kmean = clusters$KM_15
 > clusts = apply(t1, 2, function(v){union(which.max(v), which(v > 200))})
 > clusts
@@ -296,9 +273,9 @@ AADAT      0.02456712   5.110318e-07   1.649328e-08
 > columns(org.Hs.eg.db)
  [1] "ACCNUM"       "ALIAS"        "ENSEMBL"      "ENSEMBLPROT"  "ENSEMBLTRANS"
  [6] "ENTREZID"     "ENZYME"       "EVIDENCE"     "EVIDENCEALL"  "GENENAME"    
-[11] "GO"           "GOALL"        "IPI"          "MAP"          "OMIM"        
-[16] "ONTOLOGY"     "ONTOLOGYALL"  "PATH"         "PFAM"         "PMID"        
-[21] "PROSITE"      "REFSEQ"       "SYMBOL"       "UCSCKG"       "UNIGENE"     
+[11] "GENETYPE"     "GO"           "GOALL"        "IPI"          "MAP"         
+[16] "OMIM"         "ONTOLOGY"     "ONTOLOGYALL"  "PATH"         "PFAM"        
+[21] "PMID"         "PROSITE"      "REFSEQ"       "SYMBOL"       "UCSCKG"      
 [26] "UNIPROT"     
 > map1 = mapIds(org.Hs.eg.db, keys=as.character(geneInfo$entrez_id), 
 +               'ENSEMBL', 'ENTREZID')
@@ -321,53 +298,6 @@ TRUE
 > # remove genes with very low expression
 > # ------------------------------------------------------------------
 > 
-> setwd("~/research/GitHub/Vaeda")
-> 
-> # what are those genes with high expression and no ensembl gene id
-> w2check = geneInfo$pct_dropout_by_counts < 20 & is.na(geneInfo$ensembl_gene_id)
-> geneInfo[which(w2check),]
-               gene chromosome entrez_id
-RNR2           RNR2         MT      4550
-SNORD115@ SNORD115@         15    692218
-                                         gene_name mouse_homologenes
-RNR2                                        l-rRNA                  
-SNORD115@ small nucleolar RNA, C/D box 115 cluster                  
-          is_feature_control mean_counts log10_mean_counts n_cells_by_counts
-RNR2                   FALSE    671.2138          2.827507             15394
-SNORD115@              FALSE   1459.7972          3.164590             15309
-          pct_dropout_by_counts total_counts log10_total_counts n_cells_counts
-RNR2                   3.352587     10691093           7.029022          15394
-SNORD115@              3.886238     23251650           7.366454          15309
-          pct_dropout_counts feature_symbol sc3_gene_filter
-RNR2                3.352587           RNR2           FALSE
-SNORD115@           3.886238      SNORD115@           FALSE
-          sc3_5_markers_clusts sc3_5_markers_padj sc3_5_markers_auroc
-RNR2                        NA                 NA                  NA
-SNORD115@                   NA                 NA                  NA
-          sc3_10_markers_clusts sc3_10_markers_padj sc3_10_markers_auroc
-RNR2                         NA                  NA                   NA
-SNORD115@                    NA                  NA                   NA
-          sc3_15_markers_clusts sc3_15_markers_padj sc3_15_markers_auroc
-RNR2                         NA                  NA                   NA
-SNORD115@                    NA                  NA                   NA
-          sc3_5_de_padj sc3_10_de_padj sc3_15_de_padj ensembl_gene_id
-RNR2                 NA             NA             NA            <NA>
-SNORD115@            NA             NA             NA            <NA>
-> 
-> table(is.na(geneInfo$ensembl_gene_id))
-
-FALSE  TRUE 
- 4111   637 
-> wEn = which(!is.na(geneInfo$ensembl_gene_id))
-> 
-> ave_counts = geneInfo$total_counts/geneInfo$n_cells_by_counts
-> summary(ave_counts)
-    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-   52.71    89.84   115.97   144.53   156.35 11306.61 
-> summary(geneInfo$pct_dropout_by_counts)
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-  1.293  65.882  86.169  77.173  94.759  99.090 
-> 
 > table(geneInfo$pct_dropout_by_counts < 95)
 
 FALSE  TRUE 
@@ -381,57 +311,17 @@ FALSE  TRUE
 FALSE  TRUE 
  2832  1916 
 > 
-> png("figures/gene_pct_dropout.png", width=4, heigh=4, units="in", res=400)
+> png("../figures/gene_pct_dropout.png", width=4, heigh=4, units="in", res=400)
 > hist(geneInfo$pct_dropout_by_counts, main="", xlab="percentage of dropout")
 > dev.off()
 null device 
           1 
-> 
-> png("figures/gene_filtering.png", width=8, heigh=4, units="in", res=400)
-> par(mfrow=c(1,2), bty="n")
-> plot(log10(ave_counts[-wEn]), geneInfo$pct_dropout_by_counts[-wEn], 
-+      pch=20, cex=0.3, col="grey", xlab="log10(mean counts)", 
-+      ylab="percent dropout", main="without Ensembl ID", 
-+      xlim=log10(range(ave_counts)))
-> abline(h=80)
-> 
-> plot(log10(ave_counts[wEn]), geneInfo$pct_dropout_by_counts[wEn], 
-+      pch=20, cex=0.3, col="red", xlab="log10(mean counts)",
-+      ylab="percent dropout", main="with Ensembl ID",
-+      xlim=log10(range(ave_counts)))
-> abline(h=80)
-> dev.off()
-null device 
-          1 
-> 
-> geneInfo[which(ave_counts > 10000),]
-     gene chromosome entrez_id                                   gene_name
-MEG3 MEG3         14     55384 maternally expressed 3 (non-protein coding)
-     mouse_homologenes is_feature_control mean_counts log10_mean_counts
-MEG3                                FALSE    11160.38          4.047718
-     n_cells_by_counts pct_dropout_by_counts total_counts log10_total_counts
-MEG3             15722               1.29332    177762503            8.24984
-     n_cells_counts pct_dropout_counts feature_symbol sc3_gene_filter
-MEG3          15722            1.29332           MEG3           FALSE
-     sc3_5_markers_clusts sc3_5_markers_padj sc3_5_markers_auroc
-MEG3                   NA                 NA                  NA
-     sc3_10_markers_clusts sc3_10_markers_padj sc3_10_markers_auroc
-MEG3                    NA                  NA                   NA
-     sc3_15_markers_clusts sc3_15_markers_padj sc3_15_markers_auroc
-MEG3                    NA                  NA                   NA
-     sc3_5_de_padj sc3_10_de_padj sc3_15_de_padj ensembl_gene_id
-MEG3            NA             NA             NA ENSG00000214548
 > 
 > w2kp = geneInfo$pct_dropout_by_counts < 80
 > table(w2kp)
 w2kp
 FALSE  TRUE 
  2832  1916 
-> table(w2kp, !is.na(geneInfo$ensembl_gene_id))
-       
-w2kp    FALSE TRUE
-  FALSE   576 2256
-  TRUE     61 1855
 > 
 > sce = sce[which(w2kp),]
 > dim(sce)
@@ -470,9 +360,8 @@ AASDH    0.06385876   4.062517e-01   7.437100e-01 ENSG00000157426
 > # collect counts for each cell type
 > # ------------------------------------------------------------------
 > 
-> write.table(geneInfo, file="data/gene_info.txt", sep="\t", 
+> write.table(geneInfo, file="../data/gene_info.txt", sep="\t", 
 +             row.names=FALSE, col.names=TRUE, quote=FALSE)
-> 
 > 
 > celltypes = setdiff(unique(clusters$cell_type), "unknown")
 > celltypes
@@ -494,7 +383,7 @@ AASDH    0.06385876   4.062517e-01   7.437100e-01 ENSG00000157426
 +   nCells[which(nCells$Cell_Type==ct1),2] = length(cells)
 + 
 +   ct.matrx = counts(sce)[,cells]
-+   write.table(ct.matrx, file=sprintf("data/cts_%s.txt", ct1), sep="\t", 
++   write.table(ct.matrx, file=sprintf("../data/cts_%s.txt", ct1), sep="\t", 
 +               row.names=TRUE, col.names=TRUE, quote=FALSE)
 + }
 > 
@@ -515,46 +404,48 @@ AASDH    0.06385876   4.062517e-01   7.437100e-01 ENSG00000157426
 > ct.matrx = counts(sce)[,w2kp]
 > dim(ct.matrx)
 [1]  1916 15395
-> write.table(ct.matrx, file="data/cts_all_but_Micro_Endo.txt", sep="\t", 
+> 
+> write.table(ct.matrx, file="../data/cts_all_but_Micro_Endo.txt", sep="\t", 
 +             row.names=TRUE, col.names=TRUE, quote=FALSE)
 > 
-> setwd("~/research/GitHub/Vaeda/data")
-> system("gzip -f *.txt")
+> system("gzip -f ../data/*.txt")
 > 
 > sessionInfo()
-R version 4.0.3 (2020-10-10)
+R version 4.1.2 (2021-11-01)
 Platform: x86_64-apple-darwin17.0 (64-bit)
 Running under: macOS Big Sur 10.16
 
 Matrix products: default
-BLAS:   /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRblas.dylib
-LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
+BLAS:   /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRlapack.dylib
 
 locale:
 [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
 
 attached base packages:
-[1] parallel  stats4    stats     graphics  grDevices utils     datasets 
-[8] methods   base     
+[1] stats4    stats     graphics  grDevices utils     datasets  methods  
+[8] base     
 
 other attached packages:
- [1] SingleCellExperiment_1.12.0 SummarizedExperiment_1.20.0
- [3] GenomicRanges_1.42.0        GenomeInfoDb_1.26.2        
- [5] MatrixGenerics_1.2.0        matrixStats_0.57.0         
- [7] org.Hs.eg.db_3.12.0         AnnotationDbi_1.52.0       
- [9] IRanges_2.24.1              S4Vectors_0.28.1           
-[11] Biobase_2.50.0              BiocGenerics_0.36.0        
+ [1] SingleCellExperiment_1.16.0 SummarizedExperiment_1.24.0
+ [3] GenomicRanges_1.46.1        GenomeInfoDb_1.30.0        
+ [5] MatrixGenerics_1.6.0        matrixStats_0.61.0         
+ [7] org.Hs.eg.db_3.14.0         AnnotationDbi_1.56.2       
+ [9] IRanges_2.28.0              S4Vectors_0.32.3           
+[11] Biobase_2.54.0              BiocGenerics_0.40.0        
 
 loaded via a namespace (and not attached):
- [1] Rcpp_1.0.5             XVector_0.30.0         zlibbioc_1.36.0       
- [4] bit_4.0.4              lattice_0.20-41        rlang_0.4.10          
- [7] blob_1.2.1             tools_4.0.3            grid_4.0.3            
-[10] DBI_1.1.0              bit64_4.0.5            digest_0.6.27         
-[13] Matrix_1.3-0           GenomeInfoDbData_1.2.4 vctrs_0.3.6           
-[16] bitops_1.0-6           RCurl_1.98-1.2         memoise_1.1.0         
-[19] RSQLite_2.2.1          DelayedArray_0.16.0    compiler_4.0.3        
-[22] pkgconfig_2.0.3       
+ [1] Rcpp_1.0.7             compiler_4.1.2         XVector_0.34.0        
+ [4] bitops_1.0-7           tools_4.1.2            zlibbioc_1.40.0       
+ [7] bit_4.0.4              RSQLite_2.2.8          memoise_2.0.1         
+[10] lattice_0.20-45        pkgconfig_2.0.3        png_0.1-7             
+[13] rlang_0.4.12           Matrix_1.3-4           DelayedArray_0.20.0   
+[16] DBI_1.1.1              fastmap_1.1.0          GenomeInfoDbData_1.2.7
+[19] httr_1.4.2             Biostrings_2.62.0      vctrs_0.3.8           
+[22] bit64_4.0.5            grid_4.1.2             R6_2.5.1              
+[25] blob_1.2.2             KEGGREST_1.34.0        RCurl_1.98-1.5        
+[28] cachem_1.0.6           crayon_1.4.2          
 > q(save="no")
 > proc.time()
    user  system elapsed 
- 38.903   1.228  42.761 
+ 39.561   1.987  43.237 

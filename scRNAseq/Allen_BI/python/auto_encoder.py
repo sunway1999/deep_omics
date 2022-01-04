@@ -1,6 +1,4 @@
-# attempt on replicating autoencoder results
-
-
+## code written by Si Liu and Wei Sun
 
 import pandas as pd
 import numpy as np
@@ -17,9 +15,7 @@ from tensorflow.keras import optimizers
 
 from sklearn.preprocessing import normalize
 from sklearn.model_selection import train_test_split
-
 from scipy.stats import spearmanr
-
 from datetime import datetime
 
 
@@ -56,7 +52,7 @@ def plot_loss(m1, start, file_name, df_filename):
                            columns = ['epoch_idx', 'train_loss', 'valid_loss'])
     df_loss.to_csv(df_filename, index = False)
 
-
+# regular autoencoder
 def get_regular_AE(input_shape1, latent_size = 20, hidden_sizes = [71]):
     tf.keras.backend.clear_session()
     input_e = Input(shape=(input_shape1,))
@@ -68,7 +64,7 @@ def get_regular_AE(input_shape1, latent_size = 20, hidden_sizes = [71]):
     AE = Model(input_e, decoded)
     return AE
 
-
+# an autoencoder using locally connected layer
 def get_lc_AE(input_shape1, latent_size = 20, n_filter = 1, kernel_size = 100,\
               strides = 20, hidden_sizes = [71]):
     tf.keras.backend.clear_session()
@@ -87,14 +83,18 @@ def get_lc_AE(input_shape1, latent_size = 20, n_filter = 1, kernel_size = 100,\
     lc_AE = Model(input_e, decoded)
     return lc_AE
 
-
-
+model_type = "lc_AE"
+split_method = "sklearn"
+number_of_epochs = 500
+batch_size = 32
+learning_rate = 1e-3
+testing_fraction = 0.2
 
 def main(model_type = "lc_AE", split_method = "sklearn",
          number_of_epochs = 500, batch_size = 32,
          learning_rate = 1e-3, testing_fraction = 0.2):
 
-    data_file = "data/cts_all_but_Micro_Endo_ordered.txt.gz"
+    data_file = "../data/cts_all_but_Micro_Endo_ordered_by_annotation.txt.gz"
     data = pd.read_csv(data_file, compression='gzip', sep=",", header=0)
     data.shape
     data.iloc[:6, :5]
@@ -108,6 +108,9 @@ def main(model_type = "lc_AE", split_method = "sklearn",
     values = data.iloc[0: , 1:]
     data_array = values.to_numpy()
     data_array[:7, :5]
+    # this is an arbitray choice to use top 1500 genes
+    # to make it easier to generate the autoencoder
+    # so 19 genes are skipped 
     data_array = data_array[:1500, ]
     data_array = data_array.T
 
@@ -192,9 +195,9 @@ def main(model_type = "lc_AE", split_method = "sklearn",
     print("Current Time =", current_time) # 29 minutes
 
     # write out plots for loss
-    plot_path  = os.path.join('new_plots',
+    plot_path  = os.path.join('../auto_encoder_plots',
                         model_type + '_' + split_method + '_track_loss.png')
-    df_path = os.path.join('new_plots',
+    df_path = os.path.join('../auto_encoder_plots',
                         model_type + '_' + split_method + '_loss.csv')
 
     plot_loss(m1, 1, plot_path, df_path)
@@ -210,12 +213,12 @@ def main(model_type = "lc_AE", split_method = "sklearn",
         rho, pval = spearmanr(testX[:,i], test_pred[:,i])
         rho_test[i] = rho
 
-    print('spearman correlation for testing data:')
+    print('spearman gene-by-gene correlation for testing data:')
     print(pd.Series(rho_test).describe())
 
     df_rho_test = pd.DataFrame(rho_test, columns = ['rho_test'])
-    df_rho_test.to_csv('new_plots/'+model_type+'_'+\
-                        split_method+'_rho_test.csv',index = False)
+    df_rho_test.to_csv('../auto_encoder_plots/' + model_type + '_' +\
+                        split_method + '_rho_test.csv', index = False)
 
     if model_type == "AE":
         aux_model = tf.keras.Model(inputs = cur_model.inputs,
@@ -234,11 +237,11 @@ def main(model_type = "lc_AE", split_method = "sklearn",
 
 
     df_latent.to_csv(\
-    'new_plots/'+model_type+'_'+split_method+'_latent_output.csv',index = False)
+    '../auto_encoder_plots/'+model_type+'_'+split_method+'_latent_output.csv', index = False)
 
 
 if __name__ == '__main__':
     main(model_type = "AE", split_method = "sklearn")
     main(model_type = "lc_AE", split_method = "sklearn")
-    main(model_type = "AE", split_method = "manual")
-    main(model_type = "lc_AE", split_method = "manual")
+    # main(model_type = "AE", split_method = "manual")
+    # main(model_type = "lc_AE", split_method = "manual")
