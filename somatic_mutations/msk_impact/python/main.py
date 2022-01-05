@@ -1,22 +1,15 @@
 
-
-import warnings
-
-warnings.filterwarnings(action="ignore", category=DeprecationWarning)
-warnings.filterwarnings(action="ignore", category=FutureWarning)
-warnings.filterwarnings(action="ignore", category=PendingDeprecationWarning)
-
 import os
 import argparse
 import itertools
 import random
 from sklearn.preprocessing import normalize
 from sklearn.model_selection import train_test_split
+
 import tensorflow as tf
-from keras import backend as K
-from keras.layers import Input, Dense, LocallyConnected1D, Flatten, Reshape, Dropout
-from keras.models import Model
-from keras import optimizers
+from tensorflow.keras.layers import Input, Dense, Reshape, LocallyConnected1D, Flatten, Dropout
+from tensorflow.keras.models import Model
+from tensorflow.keras import optimizers
 
 import math
 import numpy as np
@@ -48,13 +41,13 @@ def plot_loss(m1, start, plot_path):
     plt.close()
 
 
-# input_file   = "mut_matrix_340_x_5491.txt"
+# input_file   = "mut_matrix_340_x_9112.txt"
 # data_dir     = "../data/"
 # fig_dir      = "../figures"
 # results_dir  = "../results"
 # latent_size  = 20
-# hidden_size1 = 400
-# hidden_size2 = 200
+# hidden_size1 = 200
+# hidden_size2 = 100
 # n_epochs     = 50
 # learn_rate   = 1e-3
 # batch_size   = 32
@@ -65,127 +58,120 @@ def main(input_file, data_dir = "data", fig_dir = "figures",
     results_dir = "results", split_data_set = True, testing_frac = 0.2, 
     latent_size = 20, hidden_size1 = 400, hidden_size2 = 200, 
     n_layers=1,  n_epochs = 50, batch_size = 32, learn_rate = 1e-3):
-    
+
     if n_layers > 2 :
             print('n_layers can be only 1 or 2:')
             raise ValueError
-    
+
     hidden_sizes = [hidden_size1, hidden_size2]
-    
+
     # -----------------------------------------------------------------
     # model configuration
     # -----------------------------------------------------------------
-    
+
     config = str(latent_size) + '_' + str(hidden_sizes[0])
-    
+
     if n_layers == 2:
              config = config + '_' + str(hidden_sizes[1])
-    
+
     config = config + '_bs_' + str(batch_size) + '_lr_' + str(learn_rate)
     config = config + '_e_' + str(n_epochs) + '_layer_' + str(n_layers)
-    
 
     # -----------------------------------------------------------------
     # read in data
     # -----------------------------------------------------------------
-    
+
     file_name = os.path.join(data_dir, input_file)
-    
+
     print('input file:')
     print(file_name)
     print('')
-    
+
     df = pd.read_csv(file_name, sep='\t', header=0, index_col=0)
     df.iloc[0:3,0:5]
-    
-    
+
     # -----------------------------------------------------------------
     # filter samples by mutation load
     # -----------------------------------------------------------------
-    
+
     mload = df.sum(0)
     mload.shape
     print('mutation load:')
     print(mload.describe())
-    
-    # how many samples have 3 or more mutated genes
+
+    # how many samples have 5 or more mutated genes
     mload.ge(5).sum()
-    
+
     df = df.loc[:,mload.ge(5)]
     df.shape
-    
+
     mload = np.array(df.sum(0))
-    
+
     n, bins, patches = plt.hist(np.log10(mload), 50, density=False, facecolor='g', alpha=0.75)
-    
+
     hist_path = os.path.join(fig_dir, '_mutation_load_hist.png')
-    
+
     plt.xlabel('log10(mutation laod)')
     plt.ylabel('frequnecy')
     plt.grid(True)
     plt.savefig(hist_path)
-    
+
     # -----------------------------------------------------------------
     # split_training_testing_data
     # -----------------------------------------------------------------
-    
+
     dfT = df.T
     trainX, testX = train_test_split(dfT, test_size=testing_frac, random_state=1999)
-    
+
     print('training and testing data dimension:')
     print(trainX.shape)
     print(testX.shape)
-    
+
     print('trainX[0:2, 0:9]:')
     print(trainX.iloc[0:2, 0:9])
-    
+
     print('testX[0:2, 0:9]:')
     print(testX.iloc[0:2, 0:9])
-    
-    
+
+
     # -----------------------------------------------------------------
     # model setup
     # -----------------------------------------------------------------
-    
+
     input_e = Input(shape=(trainX.shape[1],), name='input')
     encoded = Dense(hidden_sizes[0], activation='relu', name='encoding1')(input_e)
-    encoded = Dropout(rate=0.2, name='dropout_encoding')(encoded)
-    
+    encoded = Dropout(rate=0.5, name='dropout_encoding')(encoded)
+
     if n_layers > 1: 
             encoded = Dense(hidden_sizes[1], activation='relu', name='encoding2')(encoded)
-            
-    if n_layers > 2:
-            encoded = Dense(hidden_sizes[2], activation='relu', name='encoding3')(encoded)
-    
+
     encoded = Dense(latent_size, activation='relu', name='bottleneck')(encoded)
     decoded = Dense(hidden_sizes[0], activation='relu', name='decoding1')(encoded)
-    
+
     if n_layers > 1: 
             decoded = Dense(hidden_sizes[1], activation='relu', name='decoding2')(decoded)
-    
-    if n_layers > 2:
-            decoded = Dense(hidden_sizes[0], activation='relu', name='decoding3')(decoded)
-    
+
     decoded = Dense(trainX.shape[1], activation='sigmoid', name='output')(decoded)
-    
+
     autoencoder = Model(input_e, decoded)
     autoencoder.summary()
-    
+
     # -----------------------------------------------------------------
     # model fitting
     # -----------------------------------------------------------------
-    
+
     adam1 = optimizers.Adam(lr=learn_rate, beta_1=0.8, beta_2=0.9)
+    adam1 = optimizers.Adam(lr=learn_rate)
     # sgd1  = optimizers.SGD(lr=learn_rate, momentum=0.8, decay=0.0, nesterov=False)
-    
+
     autoencoder.compile(optimizer=adam1, loss='binary_crossentropy', metrics=['accuracy'])
-    
+
     m1 = autoencoder.fit(trainX, trainX, epochs=n_epochs, batch_size=batch_size, 
-                                            verbose=1, validation_data=(testX, testX))
-    
+        verbose=2, validation_data=(testX, testX))
+
     train_pred = autoencoder.predict(trainX)
     test_pred  = autoencoder.predict(testX)
-    
+
     print('')
     print('training and testing classificiation accuracy:')
     print('')
@@ -199,48 +185,43 @@ def main(input_file, data_dir = "data", fig_dir = "figures",
     print('')
 
     plot_path  = os.path.join(fig_dir, 'track_loss_' + config + '.png')
-    model_path = os.path.join(results_dir, 'model_' + config + '.h5')
-    
     plot_loss(m1, 1, plot_path)
-    autoencoder.save(model_path)
-    
+
+    # model_path = os.path.join(results_dir, 'model_' + config + '.h5')
+    # autoencoder.save(model_path)
+
     # -----------------------------------------------------------------
     # extract final model output
     # -----------------------------------------------------------------
-    
+
     out_train = pd.DataFrame(data=train_pred, index=trainX.index)
     out_test  = pd.DataFrame(data=test_pred,  index=testX.index)
-    
-    
+
+
     fnm = 'model_' + config + '_pred_train.txt'
     out_train.to_csv(os.path.join(results_dir, fnm), float_format='%.3e')
-    
+
     fnm = 'model_' + config + '_pred_test.txt'
     out_test.to_csv(os.path.join(results_dir, fnm), float_format='%.3e')
-    
+
     # -----------------------------------------------------------------
     # extract model output from bottleneck layer
     # -----------------------------------------------------------------
-    
-    sess = K.get_session()
-    
-    l2_out = autoencoder.get_layer("bottleneck").output
-    out_train_l2 = sess.run(l2_out, feed_dict={autoencoder.input: trainX})
-    out_test_l2  = sess.run(l2_out, feed_dict={autoencoder.input: testX})
-    
-    type(out_train_l2)
-    out_train_l2.shape
-    
-    out_train_l2 = pd.DataFrame(data=out_train_l2, index=trainX.index)
-    out_test_l2  = pd.DataFrame(data=out_test_l2,  index=testX.index)
-    
+
+    aux_model = Model(inputs = autoencoder.inputs,
+        outputs = [autoencoder.layers[3].output])
+
+    embedding_train = aux_model.predict(trainX)
+    embedding_test  = aux_model.predict(testX)
+
+    embedding_train_df = pd.DataFrame(data=embedding_train, index=trainX.index)
+    embedding_test_df  = pd.DataFrame(data=embedding_test,  index=testX.index)
+
     fnm = 'model_' + config + '_bottleneck_train.txt'
-    out_train_l2.to_csv(os.path.join(results_dir, fnm), float_format='%.3e')
-    
+    embedding_train_df.to_csv(os.path.join(results_dir, fnm), float_format='%.3e')
+
     fnm = 'model_' + config + '_bottleneck_test.txt'
-    out_test_l2.to_csv(os.path.join(results_dir, fnm), float_format='%.3e')
-
-
+    embedding_test_df.to_csv(os.path.join(results_dir, fnm), float_format='%.3e')
 
 # -----------------------------------------------------------------
 # parameters
