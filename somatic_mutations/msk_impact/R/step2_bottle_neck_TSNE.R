@@ -57,10 +57,10 @@ dim(datL[[1]])
 datL[[1]][1:2,]
 
 # ---------------------------------------------------------------------------
-# check one setup, remove the latent reprentation with zero weights
+# check one setup, remove the latent representation with zero weights
 # ---------------------------------------------------------------------------
 
-k = 9
+k = 3
 
 bnk = bn.label[k]
 bn.label
@@ -163,10 +163,10 @@ gp2 = ggplot(df_tsne, aes(X1.PCA,X2.PCA,col=cancerType)) +
   geom_point(size=0.8,alpha=0.7) + .set_color_11() + 
   guides(color = guide_legend(override.aes = list(size=3)))
 
-ggsave(sprintf("../figures/_tSNE_bottleneck_redraw/test_%s.png", bnk), gp1, 
+ggsave(sprintf("../figures/test_%s.png", bnk), gp1, 
        width=4.9, height=2.9, units="in")
 
-ggsave(sprintf("../figures/_tSNE_bottleneck_redraw/test_%s_PCs.png", bnk), gp2, 
+ggsave(sprintf("../figures/test_%s_PCs.png", bnk), gp2, 
        width=4.9, height=2.9, units="in")
 
 # ---------------------------------------------------------------------------
@@ -183,10 +183,10 @@ gp2 = ggplot(df_tsne, aes(X1.PCA,X2.PCA,col=log10(mb+1))) +
   scale_colour_gradientn(colours = terrain.colors(10)[1:8]) +
   guides(color = guide_legend(override.aes = list(size=3)))
 
-ggsave(sprintf("../figures/_tSNE_bottleneck_redraw/test_%s_mb.png", bnk), gp1, 
+ggsave(sprintf("../figures/test_%s_mb.png", bnk), gp1, 
        width=4.3, height=2.9, units="in")
 
-ggsave(sprintf("../figures/_tSNE_bottleneck_redraw/test_%s_mb_PCs.png", bnk), gp2, 
+ggsave(sprintf("../figures/test_%s_mb_PCs.png", bnk), gp2, 
        width=4.3, height=2.9, units="in")
 
 sessionInfo()

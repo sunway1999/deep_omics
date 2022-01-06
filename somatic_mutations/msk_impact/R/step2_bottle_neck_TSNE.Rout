@@ -1,7 +1,7 @@
 
-R version 3.5.2 (2018-12-20) -- "Eggshell Igloo"
-Copyright (C) 2018 The R Foundation for Statistical Computing
-Platform: x86_64-apple-darwin15.6.0 (64-bit)
+R version 4.1.2 (2021-11-01) -- "Bird Hippie"
+Copyright (C) 2021 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin17.0 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -29,7 +29,7 @@ Type 'q()' to quit R.
 +                      header=TRUE, sep="\t", as.is=TRUE, quote="",
 +                      comment.char = "", skip=4)
 > dim(samples)
-[1] 10945    16
+[1] 10945    18
 > head(samples)
   PATIENT_ID         SAMPLE_ID SAMPLE_COLLECTION_SOURCE
 1  P-0000004 P-0000004-T01-IM3                  Outside
@@ -59,13 +59,20 @@ Type 'q()' to quit R.
 4        Tumor           UEC Endometrial Cancer
 5        Tumor           USC Endometrial Cancer
 6        Tumor           USC Endometrial Cancer
-                                         CANCER_TYPE_DETAILED
-1                            Breast Invasive Ductal Carcinoma
-2                            Breast Invasive Ductal Carcinoma
-3                                     Peritoneal Mesothelioma
-4                              Uterine Endometrioid Carcinoma
-5 Uterine Serous Carcinoma/Uterine Papillary Serous Carcinoma
-6 Uterine Serous Carcinoma/Uterine Papillary Serous Carcinoma
+                                         CANCER_TYPE_DETAILED SOMATIC_STATUS
+1                            Breast Invasive Ductal Carcinoma        Matched
+2                            Breast Invasive Ductal Carcinoma        Matched
+3                                     Peritoneal Mesothelioma        Matched
+4                              Uterine Endometrioid Carcinoma        Matched
+5 Uterine Serous Carcinoma/Uterine Papillary Serous Carcinoma        Matched
+6 Uterine Serous Carcinoma/Uterine Papillary Serous Carcinoma        Matched
+  TMB_NONSYNONYMOUS
+1         17.746485
+2          7.764087
+3          5.545777
+4          6.654932
+5          1.957439
+6          1.109155
 > 
 > table(samples$acronym)
 < table of extent 0 >
@@ -173,18 +180,14 @@ P.0000025.T02.IM5
 > bn = list.files(path="../results", pattern = "_bottleneck_test.txt", 
 +                 full.names=TRUE)
 > bn
- [1] "../results/model_20_400_200_bs_32_lr_0.0005_e_10_layer_2_bottleneck_test.txt"
- [2] "../results/model_20_400_200_bs_32_lr_0.0005_e_50_layer_2_bottleneck_test.txt"
- [3] "../results/model_20_400_200_bs_32_lr_0.001_e_10_layer_2_bottleneck_test.txt" 
- [4] "../results/model_20_400_200_bs_32_lr_0.001_e_50_layer_2_bottleneck_test.txt" 
- [5] "../results/model_20_400_bs_32_lr_0.0005_e_10_layer_1_bottleneck_test.txt"    
- [6] "../results/model_20_400_bs_32_lr_0.0005_e_50_layer_1_bottleneck_test.txt"    
- [7] "../results/model_20_400_bs_32_lr_0.001_e_10_layer_1_bottleneck_test.txt"     
- [8] "../results/model_20_400_bs_32_lr_0.001_e_50_layer_1_bottleneck_test.txt"     
- [9] "../results/model_20_600_bs_32_lr_0.0005_e_10_layer_1_bottleneck_test.txt"    
-[10] "../results/model_20_600_bs_32_lr_0.0005_e_50_layer_1_bottleneck_test.txt"    
-[11] "../results/model_20_600_bs_32_lr_0.001_e_10_layer_1_bottleneck_test.txt"     
-[12] "../results/model_20_600_bs_32_lr_0.001_e_50_layer_1_bottleneck_test.txt"     
+[1] "../results/model_20_100_50_bs_32_lr_0.0005_e_200_layer_2_bottleneck_test.txt" 
+[2] "../results/model_20_100_50_bs_32_lr_0.001_e_200_layer_2_bottleneck_test.txt"  
+[3] "../results/model_20_100_bs_32_lr_0.0005_e_200_layer_1_bottleneck_test.txt"    
+[4] "../results/model_20_100_bs_32_lr_0.001_e_200_layer_1_bottleneck_test.txt"     
+[5] "../results/model_20_200_100_bs_32_lr_0.0005_e_200_layer_2_bottleneck_test.txt"
+[6] "../results/model_20_200_100_bs_32_lr_0.001_e_200_layer_2_bottleneck_test.txt" 
+[7] "../results/model_20_200_bs_32_lr_0.0005_e_200_layer_1_bottleneck_test.txt"    
+[8] "../results/model_20_200_bs_32_lr_0.001_e_200_layer_1_bottleneck_test.txt"     
 > bn.label = gsub("../results/", "", bn, fixed=TRUE)
 > bn.label = gsub("_bottleneck_test.txt", "", bn.label)
 > 
@@ -198,61 +201,66 @@ P.0000025.T02.IM5
 + }
 > 
 > dim(datL[[1]])
-[1] 785  20
+[1] 785  50
 > datL[[1]][1:2,]
-                     X0     X1     X2     X3 X4    X5     X6       X7     X8
-P.0002753.T01.IM3 3.397 4.6320 2.4860 4.4920  0 1.835 4.3060 4.558000 1.3580
-P.0011239.T02.IM5 1.688 0.5253 0.2534 0.2483  0 1.019 0.6892 0.007264 0.3251
-                    X9   X10    X11    X12    X13    X14   X15    X16   X17
-P.0002753.T01.IM3 3.44 2.688 0.7331 3.6770 0.0000 4.2210 2.908 2.1490 4.672
-P.0011239.T02.IM5 0.00 0.000 2.0640 0.3779 0.7172 0.1705 1.242 0.7208 0.000
-                    X18   X19
-P.0002753.T01.IM3 1.490 2.979
-P.0011239.T02.IM5 1.102 1.089
+                     X0     X1 X2    X3     X4     X5     X6     X7     X8
+P.0002753.T01.IM3 0.000 1.9200  0 1.318 1.4530 1.5070 1.4440 1.2940 1.6540
+P.0011239.T02.IM5 0.461 0.3268  0 0.000 0.4158 0.3362 0.2579 0.2276 0.4057
+                     X9    X10    X11    X12    X13   X14    X15    X16    X17
+P.0002753.T01.IM3 1.306 1.9850 1.2490 1.3080 1.1720 1.088 1.6290 0.9954 1.1920
+P.0011239.T02.IM5 0.235 0.2478 0.1554 0.1786 0.3179 0.303 0.1918 0.4932 0.1722
+                      X18    X19   X20    X21 X22 X23    X24    X25    X26
+P.0002753.T01.IM3 0.00000 1.7550 2.363 1.1410   0   0 1.2680 1.2370 2.1870
+P.0011239.T02.IM5 0.02917 0.2959 0.000 0.3345   0   0 0.1603 0.1278 0.4584
+                     X27      X28  X29    X30     X31 X32    X33 X34    X35
+P.0002753.T01.IM3 1.0800 1.680000 2.18 1.2890 0.68430   0 1.4150   0 0.6739
+P.0011239.T02.IM5 0.2246 0.002701 0.00 0.1645 0.06445   0 0.3702   0 0.0000
+                     X36    X37     X38    X39    X40   X41    X42    X43
+P.0002753.T01.IM3 2.6060 1.4790 0.91960 1.0120 2.6500 1.384 1.7640 0.5472
+P.0011239.T02.IM5 0.3841 0.2172 0.05466 0.4386 0.3833 0.000 0.1457 0.1991
+                     X44    X45    X46    X47    X48    X49
+P.0002753.T01.IM3 0.7440 0.5350 0.9762 1.4120 2.2250 1.6440
+P.0011239.T02.IM5 0.3919 0.3758 0.1617 0.1702 0.3271 0.1318
 > 
 > # ---------------------------------------------------------------------------
-> # check one setup, remove the latent reprentation with zero weights
+> # check one setup, remove the latent representation with zero weights
 > # ---------------------------------------------------------------------------
 > 
-> k = 9
+> k = 3
 > 
 > bnk = bn.label[k]
 > bn.label
- [1] "model_20_400_200_bs_32_lr_0.0005_e_10_layer_2"
- [2] "model_20_400_200_bs_32_lr_0.0005_e_50_layer_2"
- [3] "model_20_400_200_bs_32_lr_0.001_e_10_layer_2" 
- [4] "model_20_400_200_bs_32_lr_0.001_e_50_layer_2" 
- [5] "model_20_400_bs_32_lr_0.0005_e_10_layer_1"    
- [6] "model_20_400_bs_32_lr_0.0005_e_50_layer_1"    
- [7] "model_20_400_bs_32_lr_0.001_e_10_layer_1"     
- [8] "model_20_400_bs_32_lr_0.001_e_50_layer_1"     
- [9] "model_20_600_bs_32_lr_0.0005_e_10_layer_1"    
-[10] "model_20_600_bs_32_lr_0.0005_e_50_layer_1"    
-[11] "model_20_600_bs_32_lr_0.001_e_10_layer_1"     
-[12] "model_20_600_bs_32_lr_0.001_e_50_layer_1"     
+[1] "model_20_100_50_bs_32_lr_0.0005_e_200_layer_2" 
+[2] "model_20_100_50_bs_32_lr_0.001_e_200_layer_2"  
+[3] "model_20_100_bs_32_lr_0.0005_e_200_layer_1"    
+[4] "model_20_100_bs_32_lr_0.001_e_200_layer_1"     
+[5] "model_20_200_100_bs_32_lr_0.0005_e_200_layer_2"
+[6] "model_20_200_100_bs_32_lr_0.001_e_200_layer_2" 
+[7] "model_20_200_bs_32_lr_0.0005_e_200_layer_1"    
+[8] "model_20_200_bs_32_lr_0.001_e_200_layer_1"     
 > bnk
-[1] "model_20_600_bs_32_lr_0.0005_e_10_layer_1"
+[1] "model_20_100_bs_32_lr_0.0005_e_200_layer_1"
 > 
 > dat1 = datL[[bnk]]
 > dim(dat1)
 [1] 785  20
 > dat1[1:2,]
-                      X0    X1     X2    X3    X4       X5    X6    X7    X8
-P.0002753.T01.IM3 2.6780 3.198 2.2490 3.852 3.577 0.487800 3.337 2.659 4.212
-P.0011239.T02.IM5 0.2746 0.124 0.1212 0.000 1.912 0.001132 0.000 0.000 1.609
-                      X9    X10  X11    X12     X13    X14   X15   X16   X17
-P.0002753.T01.IM3 2.4800 2.0030 2.42 4.4660 4.43300 2.6740 1.533 2.731 3.572
-P.0011239.T02.IM5 0.2657 0.1213 0.00 0.6557 0.06855 0.5885 0.000 0.000 0.000
+                      X0    X1    X2     X3     X4     X5     X6     X7     X8
+P.0002753.T01.IM3 3.2040 2.204 4.771 1.2950 1.4960 3.7140 3.9480 3.1940 2.7160
+P.0011239.T02.IM5 0.2465 0.290 0.504 0.2905 0.3701 0.2405 0.3219 0.3253 0.2536
+                      X9    X10    X11    X12    X13    X14   X15    X16   X17
+P.0002753.T01.IM3 3.5620 3.4500 3.0740 4.0150 3.4410 3.5980 4.858 2.3710 4.150
+P.0011239.T02.IM5 0.3418 0.2492 0.3171 0.3151 0.3842 0.1911 0.457 0.3408 0.392
                      X18    X19
-P.0002753.T01.IM3 3.1530 3.4210
-P.0011239.T02.IM5 0.2071 0.8908
+P.0002753.T01.IM3 3.9880 2.8920
+P.0011239.T02.IM5 0.1302 0.3573
 > apply(dat1, 2, sd)
-       X0        X1        X2        X3        X4        X5        X6        X7 
-1.0463951 1.0976198 1.1080590 1.1009000 1.0603784 0.9637879 1.0846556 0.9911501 
-       X8        X9       X10       X11       X12       X13       X14       X15 
-1.2039356 0.9705124 1.0912604 0.7890025 0.9935202 1.1003876 1.0088645 0.8793630 
-      X16       X17       X18       X19 
-0.9523417 1.0085219 1.0915808 1.1976321 
+      X0       X1       X2       X3       X4       X5       X6       X7 
+1.128885 1.025763 1.074126 1.093370 1.101648 1.033644 1.161600 1.014148 
+      X8       X9      X10      X11      X12      X13      X14      X15 
+1.060799 1.172715 1.172666 1.032277 1.000130 1.013415 1.084111 1.034436 
+     X16      X17      X18      X19 
+1.101048 1.070054 1.097652 1.005369 
 > w2kp = which(apply(dat1, 2, sd) > 0)
 > w2kp
  X0  X1  X2  X3  X4  X5  X6  X7  X8  X9 X10 X11 X12 X13 X14 X15 X16 X17 X18 X19 
@@ -262,7 +270,7 @@ P.0011239.T02.IM5 0.2071 0.8908
 > dim(dat1)
 [1] 785  20
 > dim(dat2)
-[1] 785  20
+[1] 784  20
 > 
 > # ---------------------------------------------------------------------------
 > # run TSNE using bottleneck layer or PCs
@@ -270,18 +278,18 @@ P.0011239.T02.IM5 0.2071 0.8908
 > 
 > set.seed(100)
 > date()
-[1] "Tue Nov  5 23:17:44 2019"
+[1] "Wed Jan  5 23:55:02 2022"
 > tsne = Rtsne(dat2, pca = FALSE)
 > date()
-[1] "Tue Nov  5 23:17:46 2019"
+[1] "Wed Jan  5 23:55:04 2022"
 > 
 > table(rownames(dat2) %in% colnames(mutDat))
 
 TRUE 
- 785 
+ 784 
 > mutDat.test = mutDat[,match(rownames(dat2), colnames(mutDat))]
 > dim(mutDat.test)
-[1] 340 785
+[1] 340 784
 > mutDat.test[1:2,1:5]
      P.0002753.T01.IM3 P.0011239.T02.IM5 P.0005189.T01.IM5 P.0007169.T01.IM5
 [1,]                 0                 0                 0                 0
@@ -291,10 +299,10 @@ TRUE
 [2,]                 0
 > 
 > date()
-[1] "Tue Nov  5 23:17:46 2019"
+[1] "Wed Jan  5 23:55:04 2022"
 > tsne2 = Rtsne(t(mutDat.test), pca = TRUE, initial_dim=ncol(dat2))
 > date()
-[1] "Tue Nov  5 23:17:48 2019"
+[1] "Wed Jan  5 23:55:06 2022"
 > 
 > # ---------------------------------------------------------------------------
 > # construct a data frame holding the tSNE results and sample information
@@ -306,23 +314,23 @@ TRUE
 > samples2 = samples[match(rownames(dat2), sampleID),]
 > 
 > dim(df_tsne)
-[1] 785   2
+[1] 784   2
 > df_tsne[1:2,]
                          X1        X2
-P.0002753.T01.IM3 -8.914268 -10.10125
-P.0011239.T02.IM5 12.669534  22.63619
+P.0002753.T01.IM3  23.52646  7.087519
+P.0011239.T02.IM5 -32.53382 -5.940384
 > 
 > df_tsne = cbind(df_tsne, tsne2$Y)
 > names(df_tsne)[3:4] = c("X1.PCA", "X2.PCA")
 > dim(df_tsne)
-[1] 785   4
+[1] 784   4
 > df_tsne[1:2,]
-                         X1        X2   X1.PCA   X2.PCA
-P.0002753.T01.IM3 -8.914268 -10.10125 16.51352 1.727564
-P.0011239.T02.IM5 12.669534  22.63619 -5.37728 7.090687
+                         X1        X2    X1.PCA    X2.PCA
+P.0002753.T01.IM3  23.52646  7.087519 -2.929870 -4.031681
+P.0011239.T02.IM5 -32.53382 -5.940384 -1.976234  8.326398
 > 
 > dim(samples2)
-[1] 785  16
+[1] 784  18
 > samples2[1:2,1:10]
       PATIENT_ID         SAMPLE_ID SAMPLE_COLLECTION_SOURCE
 2663   P-0002753 P-0002753-T01-IM3                 In-House
@@ -338,14 +346,14 @@ P.0011239.T02.IM5 12.669534  22.63619 -5.37728 7.090687
 > table(rownames(df_tsne) %in% names(mb))
 
 TRUE 
- 785 
+ 784 
 > df_tsne$mb = mb[match(rownames(df_tsne), names(mb))]
 > dim(df_tsne)
-[1] 785  21
+[1] 784  23
 > df_tsne[1:2,]
-                         X1        X2   X1.PCA   X2.PCA PATIENT_ID
-P.0002753.T01.IM3 -8.914268 -10.10125 16.51352 1.727564  P-0002753
-P.0011239.T02.IM5 12.669534  22.63619 -5.37728 7.090687  P-0011239
+                         X1        X2    X1.PCA    X2.PCA PATIENT_ID
+P.0002753.T01.IM3  23.52646  7.087519 -2.929870 -4.031681  P-0002753
+P.0011239.T02.IM5 -32.53382 -5.940384 -1.976234  8.326398  P-0011239
                           SAMPLE_ID SAMPLE_COLLECTION_SOURCE
 P.0002753.T01.IM3 P-0002753-T01-IM3                 In-House
 P.0011239.T02.IM5 P-0011239-T02-IM5                  Outside
@@ -358,9 +366,12 @@ P.0011239.T02.IM5             938           30        Matched     Primary
                       PRIMARY_SITE METASTATIC_SITE SAMPLE_CLASS ONCOTREE_CODE
 P.0002753.T01.IM3            Liver  Not Applicable        Tumor           HCC
 P.0011239.T02.IM5 Transverse Colon  Not Applicable        Tumor          COAD
-                           CANCER_TYPE     CANCER_TYPE_DETAILED mb
-P.0002753.T01.IM3 Hepatobiliary Cancer Hepatocellular Carcinoma  5
-P.0011239.T02.IM5    Colorectal Cancer     Colon Adenocarcinoma 64
+                           CANCER_TYPE     CANCER_TYPE_DETAILED SOMATIC_STATUS
+P.0002753.T01.IM3 Hepatobiliary Cancer Hepatocellular Carcinoma        Matched
+P.0011239.T02.IM5    Colorectal Cancer     Colon Adenocarcinoma        Matched
+                  TMB_NONSYNONYMOUS mb
+P.0002753.T01.IM3          5.545777  5
+P.0011239.T02.IM5         82.212455 64
 > 
 > # ---------------------------------------------------------------------------
 > # setup color scheme
@@ -372,7 +383,7 @@ P.0011239.T02.IM5    Colorectal Cancer     Colon Adenocarcinoma 64
 Non-Small Cell Lung Cancer          Colorectal Cancer 
                        170                        133 
              Breast Cancer             Bladder Cancer 
-                        80                         65 
+                        80                         64 
                   Melanoma                     Glioma 
                         41                         39 
     Esophagogastric Cancer       Head and Neck Cancer 
@@ -387,7 +398,7 @@ Non-Small Cell Lung Cancer          Colorectal Cancer
 > table(df_tsne$cancerType)
 
             Bladder Cancer              Breast Cancer 
-                        65                         80 
+                        64                         80 
          Colorectal Cancer     Esophagogastric Cancer 
                        133                         28 
                     Glioma       Head and Neck Cancer 
@@ -428,10 +439,10 @@ Non-Small Cell Lung Cancer          Colorectal Cancer
 +   geom_point(size=0.8,alpha=0.7) + .set_color_11() + 
 +   guides(color = guide_legend(override.aes = list(size=3)))
 > 
-> ggsave(sprintf("../figures/_tSNE_bottleneck_redraw/test_%s.png", bnk), gp1, 
+> ggsave(sprintf("../figures/test_%s.png", bnk), gp1, 
 +        width=4.9, height=2.9, units="in")
 > 
-> ggsave(sprintf("../figures/_tSNE_bottleneck_redraw/test_%s_PCs.png", bnk), gp2, 
+> ggsave(sprintf("../figures/test_%s_PCs.png", bnk), gp2, 
 +        width=4.9, height=2.9, units="in")
 > 
 > # ---------------------------------------------------------------------------
@@ -448,20 +459,20 @@ Non-Small Cell Lung Cancer          Colorectal Cancer
 +   scale_colour_gradientn(colours = terrain.colors(10)[1:8]) +
 +   guides(color = guide_legend(override.aes = list(size=3)))
 > 
-> ggsave(sprintf("../figures/_tSNE_bottleneck_redraw/test_%s_mb.png", bnk), gp1, 
+> ggsave(sprintf("../figures/test_%s_mb.png", bnk), gp1, 
 +        width=4.3, height=2.9, units="in")
 > 
-> ggsave(sprintf("../figures/_tSNE_bottleneck_redraw/test_%s_mb_PCs.png", bnk), gp2, 
+> ggsave(sprintf("../figures/test_%s_mb_PCs.png", bnk), gp2, 
 +        width=4.3, height=2.9, units="in")
 > 
 > sessionInfo()
-R version 3.5.2 (2018-12-20)
-Platform: x86_64-apple-darwin15.6.0 (64-bit)
-Running under: macOS  10.15.1
+R version 4.1.2 (2021-11-01)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Big Sur 10.16
 
 Matrix products: default
-BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
-LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
+BLAS:   /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRlapack.dylib
 
 locale:
 [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -470,16 +481,18 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] ggplot2_3.2.0 Rtsne_0.15   
+[1] ggplot2_3.3.5 Rtsne_0.15   
 
 loaded via a namespace (and not attached):
- [1] Rcpp_1.0.1       digest_0.6.19    withr_2.1.2      crayon_1.3.4    
- [5] dplyr_0.8.3      assertthat_0.2.1 grid_3.5.2       R6_2.4.0        
- [9] gtable_0.3.0     magrittr_1.5     scales_1.0.0     pillar_1.4.1    
-[13] rlang_0.4.0      lazyeval_0.2.2   labeling_0.3     tools_3.5.2     
-[17] glue_1.3.1       purrr_0.3.2      munsell_0.5.0    compiler_3.5.2  
-[21] pkgconfig_2.0.2  colorspace_1.4-1 tidyselect_0.2.5 tibble_2.1.3    
+ [1] Rcpp_1.0.7       magrittr_2.0.1   tidyselect_1.1.1 munsell_0.5.0   
+ [5] colorspace_2.0-2 R6_2.5.1         rlang_0.4.12     fansi_0.5.0     
+ [9] dplyr_1.0.7      tools_4.1.2      grid_4.1.2       gtable_0.3.0    
+[13] utf8_1.2.2       DBI_1.1.1        withr_2.4.3      ellipsis_0.3.2  
+[17] digest_0.6.29    assertthat_0.2.1 tibble_3.1.6     lifecycle_1.0.1 
+[21] crayon_1.4.2     farver_2.1.0     purrr_0.3.4      vctrs_0.3.8     
+[25] glue_1.5.1       labeling_0.4.2   compiler_4.1.2   pillar_1.6.4    
+[29] generics_0.1.1   scales_1.1.1     pkgconfig_2.0.3 
 > q(save="no")
 > proc.time()
    user  system elapsed 
-  7.189   0.224   7.841 
+  8.860   0.505   9.802 

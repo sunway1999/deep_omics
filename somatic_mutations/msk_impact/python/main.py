@@ -160,10 +160,7 @@ def main(input_file, data_dir = "data", fig_dir = "figures",
     # model fitting
     # -----------------------------------------------------------------
 
-    adam1 = optimizers.Adam(lr=learn_rate, beta_1=0.8, beta_2=0.9)
     adam1 = optimizers.Adam(lr=learn_rate)
-    # sgd1  = optimizers.SGD(lr=learn_rate, momentum=0.8, decay=0.0, nesterov=False)
-
     autoencoder.compile(optimizer=adam1, loss='binary_crossentropy', metrics=['accuracy'])
 
     m1 = autoencoder.fit(trainX, trainX, epochs=n_epochs, batch_size=batch_size, 
