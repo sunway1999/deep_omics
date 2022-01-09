@@ -17,9 +17,9 @@ for enc_method in one_hot blosum62 atchley pca; do
                         . ../../anaconda3/etc/profile.d/conda.sh
                         conda activate sliu3_gpu
                         export OMP_NUM_THREADS=1
-                        sbatch --gres=gpu -t 01-10:00:00 -o st129I.log \
-                                -p campus-new --job-name=st129I \
-                                step129_template_HLA_I_gpu.py $enc_method $n_fold $lr $V_cdrs $CNN_flag [1,3,5,7,9] $n_filters $pl_size $strides $n_dense $n_units $dropout_flag $p_dropout 1216 2207
+                        sbatch --gres=gpu -t 01-10:00:00 -o v4.log \
+                                -p campus-new --job-name=v4 \
+                                v4_template_HLA_I_gpu.py $enc_method $n_fold $lr $V_cdrs $CNN_flag [1,3,5,7,9] $n_filters $pl_size $strides $n_dense $n_units $dropout_flag $p_dropout 1216 2207
                       done
                     done
                   done
@@ -48,9 +48,9 @@ for enc_method in one_hot blosum62 atchley pca; do
                         . ../../anaconda3/etc/profile.d/conda.sh
                         conda activate sliu3_gpu
                         export OMP_NUM_THREADS=1
-                        sbatch --gres=gpu -t 01-10:00:00 -o st129I.log \
-                                -p campus-new --job-name=st129I \
-                                step129_template_HLA_I_gpu.py $enc_method $n_fold $lr $V_cdrs $CNN_flag [1,3,5,7,9] $n_filters $pl_size $strides $n_dense $n_units $dropout_flag $p_dropout 1216 2207
+                        sbatch --gres=gpu -t 01-10:00:00 -o v4.log \
+                                -p campus-new --job-name=v4 \
+                                v4_template_HLA_I_gpu.py $enc_method $n_fold $lr $V_cdrs $CNN_flag [1,3,5,7,9] $n_filters $pl_size $strides $n_dense $n_units $dropout_flag $p_dropout 1216 2207
                       done
                     done
                   done
@@ -79,9 +79,9 @@ for enc_method in one_hot blosum62 atchley pca; do
                         . ../../anaconda3/etc/profile.d/conda.sh
                         conda activate sliu3_gpu
                         export OMP_NUM_THREADS=1
-                        sbatch --gres=gpu -t 01-10:00:00 -o st129I.log \
-                                -p campus-new --job-name=st129I \
-                                step129_template_HLA_I_gpu.py $enc_method $n_fold $lr $V_cdrs $CNN_flag [1,3,5,7,9] $n_filters $pl_size $strides $n_dense $n_units $dropout_flag $p_dropout 1216 2207
+                        sbatch --gres=gpu -t 01-10:00:00 -o v4.log \
+                                -p campus-new --job-name=v4 \
+                                v4_template_HLA_I_gpu.py $enc_method $n_fold $lr $V_cdrs $CNN_flag [1,3,5,7,9] $n_filters $pl_size $strides $n_dense $n_units $dropout_flag $p_dropout 1216 2207
                       done
                     done
                   done
@@ -110,9 +110,9 @@ for enc_method in one_hot blosum62 atchley pca; do
                         . ../../anaconda3/etc/profile.d/conda.sh
                         conda activate sliu3_gpu
                         export OMP_NUM_THREADS=1
-                        sbatch --gres=gpu -t 01-10:00:00 -o st129I.log \
-                                -p campus-new --job-name=st129I \
-                                step129_template_HLA_I_gpu.py $enc_method $n_fold $lr $V_cdrs $CNN_flag [1,3,5,7,9] $n_filters $pl_size $strides $n_dense $n_units $dropout_flag $p_dropout 1216 2207
+                        sbatch --gres=gpu -t 01-10:00:00 -o v4.log \
+                                -p campus-new --job-name=v4 \
+                                v4_template_HLA_I_gpu.py $enc_method $n_fold $lr $V_cdrs $CNN_flag [1,3,5,7,9] $n_filters $pl_size $strides $n_dense $n_units $dropout_flag $p_dropout 1216 2207
                       done
                     done
                   done
