@@ -8,6 +8,21 @@ Taking HLA TCR association prediction as an example
 
 directly concatenate encoded HLA and TCR information together and pass to dense layers.
 
+v1_basic_template_HLA_I_gpu.py
+
+   |
+   
+   -- \_st_bpad_general_I.py
+   
+       |
+       
+       -- \_st_encode_general.py
+    
+   -- \_st_get_acc_classes_loss.py
+   
+   -- \_v1_build_model_general_u.py
+   
+   
 ### v2 additional separate dense layers:
 
 before concatenating the HLA and TCR information together, add two separate dense layers, with one taking the HLA information as input and the other one taking the TCR information as input.
