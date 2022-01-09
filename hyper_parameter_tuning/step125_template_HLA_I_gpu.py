@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-
-
 import os
 import sys
 import random
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+
 
 from random import shuffle, sample
 
@@ -32,7 +31,7 @@ from _st_get_acc_classes_loss import get_acc_classes
 # this file constructs and encodes the data
 from _st120_bpad_general_I import get_data
 # this file builds the model
-from _st81_build_model_general_u import get_model
+from _st125_build_model_general_u import get_model
 
 
 def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
@@ -40,9 +39,11 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
               n_filters = 100, pl_size = 0, strides = 0, \
               n_dense = 1, n_units = [16], dropout_flag = False,
               p_dropout = 0.2, rseed = 1216, tf_seed = 2207):
-
     # setting both numpy and sensorflow random seeds to make sure of
     # the reproducibility of the code
+
+    #rseed = 1216
+    #tf_seed = 2207
     seed(rseed)
     tf.random.set_seed(tf_seed)
 
@@ -65,7 +66,7 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
     # specify the name of the model with best performance on validation data set
     # in the training process, for saving the model parameters in later code
     checkpoint_path = \
-      './step122_HLA_I_saved_models/step122_HLA_I_best_valid_' + \
+      './step125_HLA_I_saved_models/step125_HLA_I_best_valid_' + \
       setting_name + '.hdf5'
 
     # number of positive pairs in traning/validating/testing
@@ -160,7 +161,6 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
               class_weight=weights, callbacks=[callback, check_point], \
               epochs=200, batch_size=32)
 
-
     loss_t_list = []
     acc_t_list = []
     auc_roc_t_list = []
@@ -217,7 +217,7 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
     df_metric = \
       pd.DataFrame(zip(loss_t_list, acc_t_list, auc_roc_t_list, auc_pr_t_list, acc_on_po_list, acc_on_ne_list), \
                    columns = ['loss','acc', 'auc_roc', 'auc_pr', 'acc_on_po', 'acc_on_ne'])
-    df_metric.to_csv("./step122_HLA_I_metrics/step122_HLA_I_metrics_" + \
+    df_metric.to_csv("./step125_HLA_I_metrics/step125_HLA_I_metrics_" + \
                       setting_name + '.csv', index = False)
 
 
