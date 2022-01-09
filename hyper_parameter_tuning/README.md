@@ -24,7 +24,7 @@ In addition to what is done in the v3, the output of CNN layer is concatenated n
 
 Compared to v4, the CNN layer is replaced by a bidirectional LSTM layer. In each direction, the LSTM unit has hidden size 8. The output of the LSTM layer contains the hidden states in both directions at all locations in CDR3 amino acid sequence.
 
-### Two CNN layers plus encoded CDR3 and separate dense layers:
+### v6 Two CNN layers plus encoded CDR3 and separate dense layers:
 
 Compared to v4, another 1D CNN layer is added after the existing CNN layer. Inside the second CNN layer, we use 16 filters of size 2 and stride 1. This setting of two CNN layers and CNN parameters follow those as in Beshnova, Daria, et al. (2020).
 
@@ -43,7 +43,7 @@ We try two ways to use V gene information. One is to use the amino acid sequence
 
 ### Number, size and dropout of dense layers after concatenation (15)
 
-For the dense layer part after concatenating the HLA and TCR information, when using only one dense layer, we try layer sizes 16, 32, and 64; when using two dense layers we try layer size pairs [32,16] and [64,16], where the first/second number is the size for the first/second layer. 
+For the dense layer part after concatenating the HLA and TCR information, when using only one dense layer, we try layer sizes 16, 32, and 64; when using two dense layers we try layer size pairs [32,16] and [64,16], where the first/second number is the size for the first/second layer.
 
 We also try using dropout rate 0.2 or 0.5, or no dropout. When only one dense layer is used, the dropout happens after the dense layer, and when two dense layers are used, the dropout happens between the two layers.
 
