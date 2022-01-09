@@ -29,9 +29,9 @@ sys.path.append(os.getcwd())
 # auc roc, auc pr, true positive rate and true negative rate
 from _st_get_acc_classes_loss import get_acc_classes
 # this file constructs and encodes the data
-from _st120_bpad_general_I import get_data
+from _st_bpad_general_I import get_data
 # this file builds the model
-from _st108_build_model_general_u import get_model
+from _v4_build_model_general_u import get_model
 
 
 def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
@@ -63,7 +63,7 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
     # specify the name of the model with best performance on validation data set
     # in the training process, for saving the model parameters in later code
     checkpoint_path = \
-      './step129_HLA_I_saved_models/step129_HLA_I_best_valid_' + \
+      './v4_HLA_I_saved_models/v4_HLA_I_best_valid_' + \
       setting_name + '.hdf5'
 
     # number of positive pairs in traning/validating/testing
@@ -215,7 +215,7 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
     df_metric = \
       pd.DataFrame(zip(loss_t_list, acc_t_list, auc_roc_t_list, auc_pr_t_list, acc_on_po_list, acc_on_ne_list), \
                    columns = ['loss','acc', 'auc_roc', 'auc_pr', 'acc_on_po', 'acc_on_ne'])
-    df_metric.to_csv("./step129_HLA_I_metrics/step129_HLA_I_metrics_" + \
+    df_metric.to_csv("./v4_HLA_I_metrics/v4_HLA_I_metrics_" + \
                       setting_name + '.csv', index = False)
 
 

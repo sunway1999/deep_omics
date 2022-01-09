@@ -11,7 +11,7 @@ from collections import defaultdict
 
 from sklearn.preprocessing import OneHotEncoder
 
-from _st101_encode_general import encode_set
+from _st_encode_general import encode_set
 
 # contains hard coded elements:
 # 40, the length of HLA I pseudo sequence

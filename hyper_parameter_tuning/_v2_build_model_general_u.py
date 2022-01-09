@@ -1,21 +1,4 @@
-# compared to _st104, this version reduces the number of
-# CNN layers to only one
-
-# this version combines the orignal encoded CDR3 sequences
-# with CNN output before feeding to dense layers
-# increase the size of the dense layers
-
-
-# change CNN structure to the same as that from the
-# De novo prediction of cancer-associated T cell receptors
-# for noninvasive cancer detection
-# paper
-# https://github.com/s175573/DeepCAT
-# all parameters for CNN part are directly carried over from
-# the inplementation of this repo
-
-
-# compared to _st81_build_model_general_u.py,
+# compared to _v1_build_model_general_u.py,
 # this version adds one dense layer after HLA
 # and one dense layer after CDR3 before
 # concatenating them together
@@ -66,15 +49,19 @@ def get_model(HLA_shape, V_shape, CDR3_shape, len_shape, \
     # whether to use CNN or not
     if CNN_flag:
         # construct CDR3_branches
-        CDR3_branch = Conv1D(filters=8, kernel_size=2, activation=relu, \
-                    input_shape = CDR3_shape, name='Conv_CDR3_1')(CDR3_input)
-        CDR3_branch = MaxPooling1D(pool_size=2, strides=1, padding='valid', \
-                                   name='MaxPooling_CDR3_1')(CDR3_branch)
-        #CDR3_flatten = Flatten(name='Flatten_CDR3')(CDR3_branch)
-        CDR3_inter_layer = Flatten(name='Flatten_CDR3')(CDR3_branch)
-        #CDR3_reshape = Reshape((CDR3_shape[0] * CDR3_shape[1],), \
-        #                       input_shape = CDR3_shape)(CDR3_input)
-        #CDR3_inter_layer = concatenate([CDR3_flatten, CDR3_reshape], axis=-1)
+        CDR3_branches = []
+        for n in n_grams:
+            CDR3_branch = Conv1D(filters=n_filters, kernel_size=n, activation=relu, \
+                        input_shape = CDR3_shape, name='Conv_CDR3_'+str(n))(CDR3_input)
+            if pl_size == 0:
+                CDR3_branch = MaxPooling1D(pool_size=27-n+1, strides=None, padding='valid', \
+                                           name='MaxPooling_CDR3_'+str(n))(CDR3_branch)
+            else:
+                CDR3_branch = MaxPooling1D(pool_size=pl_size, strides=strides, padding='valid', \
+                                           name='MaxPooling_CDR3_'+str(n))(CDR3_branch)
+            CDR3_branch = Flatten(name='Flatten_CDR3_'+str(n))(CDR3_branch)
+            CDR3_branches.append(CDR3_branch)
+        CDR3_inter_layer = concatenate(CDR3_branches, axis=-1)
     else:
         CDR3_inter_layer = Reshape((CDR3_shape[0] * CDR3_shape[1],), \
                                input_shape = CDR3_shape)(CDR3_input)
