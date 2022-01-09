@@ -35,8 +35,7 @@ from _v3_build_model_general_u import get_model
 
 
 def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
-              CNN_flag = False, n_grams = [1,3,5,7,9], \
-              n_filters = 100, pl_size = 0, strides = 0, \
+              CNN_flag = False,  \
               n_dense = 1, n_units = [16], dropout_flag = False,
               p_dropout = 0.2, rseed = 1216, tf_seed = 2207):
     # setting both numpy and sensorflow random seeds to make sure of
@@ -58,8 +57,7 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
 
     setting_name = \
      enc_method + '_len_cdr3_' + 'n_fold_' + str(n_fold) + '_' + str(lr)[2:] + \
-     str_V_cdrs + ('_CNN_filters_' + str(n_filters) + \
-       ('_plsize_' + str(pl_size) + '_strides_' + str(strides))*int(bool(pl_size))) * \
+     str_V_cdrs + ('_CNN') * \
      int(CNN_flag) + '_dense' + str(n_dense) + \
      '_n_units_' + '_'.join([str(n) for n in n_units]) + \
       ('_dropout_p_' + str(p_dropout)[2:]) * int(dropout_flag)
@@ -107,10 +105,6 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
                       cdr25_shape = cdr25_encoded_train.shape[1:],
                       V_cdrs = V_cdrs,
                       CNN_flag = CNN_flag,
-                      n_grams = n_grams,
-                      n_filters = n_filters,
-                      pl_size = pl_size,
-                      strides = strides,
                       n_dense = n_dense,
                       n_units = n_units,
                       dropout_flag = dropout_flag,
@@ -186,10 +180,6 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
                       cdr25_shape = cdr25_encoded_train.shape[1:],
                       V_cdrs = V_cdrs,
                       CNN_flag = CNN_flag,
-                      n_grams = n_grams,
-                      n_filters = n_filters,
-                      pl_size = pl_size,
-                      strides = strides,
                       n_dense = n_dense,
                       n_units = n_units,
                       dropout_flag = dropout_flag,
@@ -250,51 +240,36 @@ if __name__ == "__main__":
     else:
         CNN_flag = False
     print("CNN_flag = ", CNN_flag)
-    # n_grams
-    len_n_grams_str = len(sys.argv[6])
-    n_grams_str = sys.argv[6][1:len_n_grams_str-1].split(',')
-    n_grams = [int(i) for i in n_grams_str]
-    print("n_grams = ", n_grams)
-    # n_filters
-    n_filters = int(sys.argv[7])
-    print("n_filters = ", n_filters)
-    # pl_size
-    pl_size = int(sys.argv[8])
-    print("pl_size = ", pl_size)
-    # strides
-    strides = int(sys.argv[9])
-    print("strides = ", strides)
     # n_dense
-    n_dense = int(sys.argv[10])
+    n_dense = int(sys.argv[6])
     print("n_dense = ", n_dense)
     # n_units
-    len_n_units_str = len(sys.argv[11])
-    n_units_str = sys.argv[11][1:len_n_units_str-1].split(',')
+    len_n_units_str = len(sys.argv[7])
+    n_units_str = sys.argv[7][1:len_n_units_str-1].split(',')
     n_units = [int(i) for i in n_units_str]
     print("n_units = ", n_units)
     if len(n_units) != n_dense:
         sys.exit("Error: n_dense and n_units do not match.")
     # dropout_flag
-    if sys.argv[12] == 'True':
+    if sys.argv[8] == 'True':
         dropout_flag = True
     else:
         dropout_flag = False
     print("dropout_flag = ", dropout_flag)
     # p_dropout
-    p_dropout = float(sys.argv[13])
+    p_dropout = float(sys.argv[9])
     print('p_dropout = ', p_dropout)
     # rseed
-    if len(sys.argv) > 14:
-        rseed = int(sys.argv[14])
+    if len(sys.argv) > 10:
+        rseed = int(sys.argv[10])
     else:
         rseed = 1216
     print('rseed = ', rseed)
-    if len(sys.argv) > 15:
-        tf_seed = int(sys.argv[15])
+    if len(sys.argv) > 11:
+        tf_seed = int(sys.argv[11])
     else:
         tf_seed = 2207
     print('tf_seed = ', tf_seed)
     # run main prediction function
-    pred_asso(enc_method, n_fold, lr, V_cdrs, CNN_flag, n_grams, n_filters, \
-              pl_size, strides, \
+    pred_asso(enc_method, n_fold, lr, V_cdrs, CNN_flag, \
               n_dense, n_units, dropout_flag, p_dropout, rseed, tf_seed)

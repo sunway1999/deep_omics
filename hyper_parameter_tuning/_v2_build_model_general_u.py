@@ -14,8 +14,6 @@ from tensorflow.keras.layers import Reshape, Dropout, concatenate
 def get_model(HLA_shape, V_shape, CDR3_shape, len_shape, \
               cdr1_shape, cdr2_shape, cdr25_shape,
               V_cdrs = 2, \
-              CNN_flag = False, n_grams = [3, 5], n_filters = 100,\
-              pl_size = 0, strides = 0, \
               n_dense = 1, n_units = [16], \
               dropout_flag = False, p_dropout = 0.2):
     # check the inputs:
@@ -25,11 +23,6 @@ def get_model(HLA_shape, V_shape, CDR3_shape, len_shape, \
     if n_dense > 1 and n_dense > len(n_units):
         print('Error from func get_model: n_units input is not long enough.')
         return
-    if pl_size != 0:
-        if strides == 0:
-            print('Error from max pooling parameter setting:')
-            print('If pl_size is not 0, strides must be greater than 0.')
-            return
     # Define input layers
     HLA_input = Input(HLA_shape)
     HLA_reshape = Reshape((HLA_shape[0] * HLA_shape[1],), \
@@ -46,26 +39,10 @@ def get_model(HLA_shape, V_shape, CDR3_shape, len_shape, \
                             input_shape = cdr2_shape)(cdr2_input)
     cdr25_reshape = Reshape((cdr25_shape[0] * cdr25_shape[1],), \
                             input_shape = cdr25_shape)(cdr25_input)
-    # whether to use CNN or not
-    if CNN_flag:
-        # construct CDR3_branches
-        CDR3_branches = []
-        for n in n_grams:
-            CDR3_branch = Conv1D(filters=n_filters, kernel_size=n, activation=relu, \
-                        input_shape = CDR3_shape, name='Conv_CDR3_'+str(n))(CDR3_input)
-            if pl_size == 0:
-                CDR3_branch = MaxPooling1D(pool_size=27-n+1, strides=None, padding='valid', \
-                                           name='MaxPooling_CDR3_'+str(n))(CDR3_branch)
-            else:
-                CDR3_branch = MaxPooling1D(pool_size=pl_size, strides=strides, padding='valid', \
-                                           name='MaxPooling_CDR3_'+str(n))(CDR3_branch)
-            CDR3_branch = Flatten(name='Flatten_CDR3_'+str(n))(CDR3_branch)
-            CDR3_branches.append(CDR3_branch)
-        CDR3_inter_layer = concatenate(CDR3_branches, axis=-1)
-    else:
-        CDR3_inter_layer = Reshape((CDR3_shape[0] * CDR3_shape[1],), \
-                               input_shape = CDR3_shape)(CDR3_input)
-    # concatenate four parts together
+    # reshape CDR3 input
+    CDR3_inter_layer = Reshape((CDR3_shape[0] * CDR3_shape[1],), \
+                           input_shape = CDR3_shape)(CDR3_input)
+    # concatenate together
     HLA_part = Dense(64, activation = relu)(HLA_reshape)
     if V_cdrs == 2:
         TCR_combined = concatenate([V_input, len_input, CDR3_inter_layer, \

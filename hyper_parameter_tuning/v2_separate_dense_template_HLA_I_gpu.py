@@ -35,8 +35,6 @@ from _v2_build_model_general_u import get_model
 
 
 def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
-              CNN_flag = False, n_grams = [1,3,5,7,9], \
-              n_filters = 100, pl_size = 0, strides = 0, \
               n_dense = 1, n_units = [16], dropout_flag = False,
               p_dropout = 0.2, rseed = 1216, tf_seed = 2207):
     # setting both numpy and sensorflow random seeds to make sure of
@@ -103,11 +101,6 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
                       cdr2_shape = cdr2_encoded_train.shape[1:],
                       cdr25_shape = cdr25_encoded_train.shape[1:],
                       V_cdrs = V_cdrs,
-                      CNN_flag = CNN_flag,
-                      n_grams = n_grams,
-                      n_filters = n_filters,
-                      pl_size = pl_size,
-                      strides = strides,
                       n_dense = n_dense,
                       n_units = n_units,
                       dropout_flag = dropout_flag,
@@ -182,11 +175,6 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
                       cdr2_shape = cdr2_encoded_train.shape[1:],
                       cdr25_shape = cdr25_encoded_train.shape[1:],
                       V_cdrs = V_cdrs,
-                      CNN_flag = CNN_flag,
-                      n_grams = n_grams,
-                      n_filters = n_filters,
-                      pl_size = pl_size,
-                      strides = strides,
                       n_dense = n_dense,
                       n_units = n_units,
                       dropout_flag = dropout_flag,
@@ -241,57 +229,36 @@ if __name__ == "__main__":
     print("V_cdrs = ", V_cdrs)
     if V_cdrs not in [0, 1, 2]:
         sys.exit("Error: V_cdrs is not on of 0, 1, 2.")
-    # CNN_flag
-    if sys.argv[5] == 'True':
-        CNN_flag = True
-    else:
-        CNN_flag = False
-    print("CNN_flag = ", CNN_flag)
-    # n_grams
-    len_n_grams_str = len(sys.argv[6])
-    n_grams_str = sys.argv[6][1:len_n_grams_str-1].split(',')
-    n_grams = [int(i) for i in n_grams_str]
-    print("n_grams = ", n_grams)
-    # n_filters
-    n_filters = int(sys.argv[7])
-    print("n_filters = ", n_filters)
-    # pl_size
-    pl_size = int(sys.argv[8])
-    print("pl_size = ", pl_size)
-    # strides
-    strides = int(sys.argv[9])
-    print("strides = ", strides)
     # n_dense
-    n_dense = int(sys.argv[10])
+    n_dense = int(sys.argv[5])
     print("n_dense = ", n_dense)
     # n_units
-    len_n_units_str = len(sys.argv[11])
-    n_units_str = sys.argv[11][1:len_n_units_str-1].split(',')
+    len_n_units_str = len(sys.argv[6])
+    n_units_str = sys.argv[6][1:len_n_units_str-1].split(',')
     n_units = [int(i) for i in n_units_str]
     print("n_units = ", n_units)
     if len(n_units) != n_dense:
         sys.exit("Error: n_dense and n_units do not match.")
     # dropout_flag
-    if sys.argv[12] == 'True':
+    if sys.argv[7] == 'True':
         dropout_flag = True
     else:
         dropout_flag = False
     print("dropout_flag = ", dropout_flag)
     # p_dropout
-    p_dropout = float(sys.argv[13])
+    p_dropout = float(sys.argv[8])
     print('p_dropout = ', p_dropout)
     # rseed
-    if len(sys.argv) > 14:
-        rseed = int(sys.argv[14])
+    if len(sys.argv) > 9:
+        rseed = int(sys.argv[9])
     else:
         rseed = 1216
     print('rseed = ', rseed)
-    if len(sys.argv) > 15:
-        tf_seed = int(sys.argv[15])
+    if len(sys.argv) > 10:
+        tf_seed = int(sys.argv[10])
     else:
         tf_seed = 2207
     print('tf_seed = ', tf_seed)
     # run main prediction function
-    pred_asso(enc_method, n_fold, lr, V_cdrs, CNN_flag, n_grams, n_filters, \
-              pl_size, strides, \
+    pred_asso(enc_method, n_fold, lr, V_cdrs, \
               n_dense, n_units, dropout_flag, p_dropout, rseed, tf_seed)

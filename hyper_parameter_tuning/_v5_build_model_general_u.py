@@ -1,33 +1,4 @@
-# compared to _st114, this version adds a CDR3 component to
-# concatenate with LSTM output
 
-# compared to _st108, this version replaced all CNN components
-# by LSTM
-
-# compared to _st108, this version adds another  CNN pieces of
-# kernel size [3, 4]
-
-# compared to _st104, this version reduces the number of
-# CNN layers to only one
-
-# this version combines the orignal encoded CDR3 sequences
-# with CNN output before feeding to dense layers
-# increase the size of the dense layers
-
-
-# change CNN structure to the same as that from the
-# De novo prediction of cancer-associated T cell receptors
-# for noninvasive cancer detection
-# paper
-# https://github.com/s175573/DeepCAT
-# all parameters for CNN part are directly carried over from
-# the inplementation of this repo
-
-
-# compared to _st81_build_model_general_u.py,
-# this version adds one dense layer after HLA
-# and one dense layer after CDR3 before
-# concatenating them together
 
 from tensorflow.keras.activations import relu
 from tensorflow.keras.models import Model
@@ -41,8 +12,6 @@ from tensorflow.keras.layers import Reshape, Dropout, concatenate
 def get_model(HLA_shape, V_shape, CDR3_shape, len_shape, \
               cdr1_shape, cdr2_shape, cdr25_shape,
               V_cdrs = 2, \
-              CNN_flag = False, n_grams = [3, 5], n_filters = 100,\
-              pl_size = 0, strides = 0, \
               n_dense = 1, n_units = [16], \
               dropout_flag = False, p_dropout = 0.2):
     # check the inputs:
@@ -52,11 +21,6 @@ def get_model(HLA_shape, V_shape, CDR3_shape, len_shape, \
     if n_dense > 1 and n_dense > len(n_units):
         print('Error from func get_model: n_units input is not long enough.')
         return
-    if pl_size != 0:
-        if strides == 0:
-            print('Error from max pooling parameter setting:')
-            print('If pl_size is not 0, strides must be greater than 0.')
-            return
     # Define input layers
     HLA_input = Input(HLA_shape)
     HLA_reshape = Reshape((HLA_shape[0] * HLA_shape[1],), \
@@ -73,19 +37,16 @@ def get_model(HLA_shape, V_shape, CDR3_shape, len_shape, \
                             input_shape = cdr2_shape)(cdr2_input)
     cdr25_reshape = Reshape((cdr25_shape[0] * cdr25_shape[1],), \
                             input_shape = cdr25_shape)(cdr25_input)
-    # whether to use CNN or not
-    if CNN_flag:
-        LSTM_output = \
-           Bidirectional(LSTM(8, return_sequences=True, return_state=True))(CDR3_input)[0]
-        LSTM_reshape = Reshape((LSTM_output.shape[1] * LSTM_output.shape[2],), \
-                            input_shape = LSTM_output.shape[1:])(LSTM_output)
-        CDR3_reshape = Reshape((CDR3_shape[0] * CDR3_shape[1],), \
-                               input_shape = CDR3_shape)(CDR3_input)
-        CDR3_inter_layer = concatenate([LSTM_reshape, CDR3_reshape], axis=-1)
-    else:
-        CDR3_inter_layer = Reshape((CDR3_shape[0] * CDR3_shape[1],), \
-                               input_shape = CDR3_shape)(CDR3_input)
-    # concatenate four parts together
+    # use LSTM
+    LSTM_output = \
+       Bidirectional(LSTM(8, return_sequences=True, return_state=True))(CDR3_input)[0]
+    LSTM_reshape = Reshape((LSTM_output.shape[1] * LSTM_output.shape[2],), \
+                        input_shape = LSTM_output.shape[1:])(LSTM_output)
+    CDR3_reshape = Reshape((CDR3_shape[0] * CDR3_shape[1],), \
+                           input_shape = CDR3_shape)(CDR3_input)
+    CDR3_inter_layer = concatenate([LSTM_reshape, CDR3_reshape], axis=-1)
+
+    # concatenate parts together
     HLA_part = Dense(64, activation = relu)(HLA_reshape)
     if V_cdrs == 2:
         TCR_combined = concatenate([V_input, len_input, CDR3_inter_layer, \
