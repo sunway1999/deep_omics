@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+
+
 import os
 import sys
 import random
@@ -7,6 +9,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
+import argparse
 
 from random import shuffle, sample
 
@@ -31,18 +34,44 @@ from _st_get_acc_classes_loss import get_acc_classes
 # this file constructs and encodes the data
 from _st_bpad_general_I import get_data
 # this file builds the model
-from _v3_build_model_general_u import get_model
+from _v1_build_model_general_u import get_model
 
 
-def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
-              CNN_flag = False,  \
-              n_dense = 1, n_units = [16], dropout_flag = False,
+
+
+parser = argparse.ArgumentParser(description='HLA TCR association prediction')
+parser.add_argument('--enc_method', default='one_hot', help='encoding method for amino acid')
+parser.add_argument('--n_fold', default=1, type=int, help='number of positive pairs divided by that of negative pairs')
+parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
+parser.add_argument('--V_cdrs', type=int, default=2, help='whether to use V gene only, cdrs only, or both for V gene part information')
+parser.add_argument('--n_dense', type=int, default=1, help='number of dense layers')
+parser.add_argument('--n_units_str', help='a list of sizes of the dense layers')
+parser.add_argument('--dropout_flag', default = 'FALSE', help='whether to use dropout or not')
+parser.add_argument('--p_dropout', type=float, default=0.0, help='dropout probability')
+parser.add_argument('--rseed', type=int, default=1216, help='random seed')
+parser.add_argument('--tf_seed', type=int, default=2207, help='random seed for tensorflow')
+
+
+
+def pred_asso(enc_method = 'one_hot', n_fold = 1, lr = 1e-3, V_cdrs = 2, \
+              n_dense = 1, n_units_str = '[16]', dropout_flag = 'False',
               p_dropout = 0.2, rseed = 1216, tf_seed = 2207):
-    # setting both numpy and sensorflow random seeds to make sure of
-    # the reproducibility of the code
 
-    #rseed = 1216
-    #tf_seed = 2207
+    # process Arguments
+    enc_method = args.enc_method
+    n_fold = args.n_fold
+    lr = args.lr
+    V_cdrs  = args.V_cdrs
+    n_dense = args.n_dense
+    n_units_str = args.n_units_str
+    dropout_flag = args.dropout_flag
+    p_dropout = args.p_dropout
+    rseed = args.rseed
+    tf_seed = args.tf_seed
+
+    rseed = int(rseed)
+    tf_seed = int(tf_seed)
+
     seed(rseed)
     tf.random.set_seed(tf_seed)
 
@@ -55,16 +84,28 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
     else:
         str_V_cdrs = "_V_cdrs"
 
+    dropout_flag = (dropout_flag == 'True')
+
+    len_n_units_str = len(n_units_str)
+    n_units_str_input = n_units_str[1:(len_n_units_str-1)].split(',')
+    n_units = [int(i) for i in n_units_str_input]
+    print("n_units = ", n_units)
+    if len(n_units) != n_dense:
+        sys.exit("Error: n_dense and n_units do not match.")
+
+
+
     setting_name = \
      enc_method + '_len_cdr3_' + 'n_fold_' + str(n_fold) + '_' + str(lr)[2:] + \
-     str_V_cdrs + ('_CNN') * \
-     int(CNN_flag) + '_dense' + str(n_dense) + \
+     str_V_cdrs + '_dense' + str(n_dense) + \
      '_n_units_' + '_'.join([str(n) for n in n_units]) + \
       ('_dropout_p_' + str(p_dropout)[2:]) * int(dropout_flag)
+
+    print(setting_name)
     # specify the name of the model with best performance on validation data set
     # in the training process, for saving the model parameters in later code
     checkpoint_path = \
-      './v3_HLA_I_saved_models/v3_HLA_I_best_valid_' + \
+      './v1_HLA_I_saved_models/v1_HLA_I_best_valid_' + \
       setting_name + '.hdf5'
 
     # number of positive pairs in traning/validating/testing
@@ -104,7 +145,6 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
                       cdr2_shape = cdr2_encoded_train.shape[1:],
                       cdr25_shape = cdr25_encoded_train.shape[1:],
                       V_cdrs = V_cdrs,
-                      CNN_flag = CNN_flag,
                       n_dense = n_dense,
                       n_units = n_units,
                       dropout_flag = dropout_flag,
@@ -155,6 +195,7 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
               class_weight=weights, callbacks=[callback, check_point], \
               epochs=200, batch_size=32)
 
+
     loss_t_list = []
     acc_t_list = []
     auc_roc_t_list = []
@@ -179,7 +220,6 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
                       cdr2_shape = cdr2_encoded_train.shape[1:],
                       cdr25_shape = cdr25_encoded_train.shape[1:],
                       V_cdrs = V_cdrs,
-                      CNN_flag = CNN_flag,
                       n_dense = n_dense,
                       n_units = n_units,
                       dropout_flag = dropout_flag,
@@ -207,69 +247,17 @@ def pred_asso(enc_method, n_fold, lr, V_cdrs = 2, \
     df_metric = \
       pd.DataFrame(zip(loss_t_list, acc_t_list, auc_roc_t_list, auc_pr_t_list, acc_on_po_list, acc_on_ne_list), \
                    columns = ['loss','acc', 'auc_roc', 'auc_pr', 'acc_on_po', 'acc_on_ne'])
-    df_metric.to_csv("./v3_HLA_I_metrics/v3_HLA_I_metrics_" + \
+    df_metric.to_csv("./v1_HLA_I_metrics/v1_HLA_I_metrics_" + \
                       setting_name + '.csv', index = False)
 
 
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 16:
-        #print("Error: too many arguments")
-        sys.exit("Error: too many input arguments")
-    print("file name is ", sys.argv[0])
-    # enc_method
-    enc_method = sys.argv[1]
-    print("enc_method = ", enc_method)
-    if enc_method not in ["one_hot", "blosum62", "atchley", "pca"]:
-        sys.exit("Error: enc_method is not coded for yet.")
-    # n_fold
-    n_fold = int(sys.argv[2])
-    print("n_fold = ", n_fold)
-    # lr, learning rate
-    lr = float(sys.argv[3])
-    print("lr = ",lr)
-    # V_cdrs, whether to use V, cdrs or both
-    V_cdrs = int(sys.argv[4])
-    print("V_cdrs = ", V_cdrs)
-    if V_cdrs not in [0, 1, 2]:
-        sys.exit("Error: V_cdrs is not on of 0, 1, 2.")
-    # CNN_flag
-    if sys.argv[5] == 'True':
-        CNN_flag = True
-    else:
-        CNN_flag = False
-    print("CNN_flag = ", CNN_flag)
-    # n_dense
-    n_dense = int(sys.argv[6])
-    print("n_dense = ", n_dense)
-    # n_units
-    len_n_units_str = len(sys.argv[7])
-    n_units_str = sys.argv[7][1:len_n_units_str-1].split(',')
-    n_units = [int(i) for i in n_units_str]
-    print("n_units = ", n_units)
-    if len(n_units) != n_dense:
-        sys.exit("Error: n_dense and n_units do not match.")
-    # dropout_flag
-    if sys.argv[8] == 'True':
-        dropout_flag = True
-    else:
-        dropout_flag = False
-    print("dropout_flag = ", dropout_flag)
-    # p_dropout
-    p_dropout = float(sys.argv[9])
-    print('p_dropout = ', p_dropout)
-    # rseed
-    if len(sys.argv) > 10:
-        rseed = int(sys.argv[10])
-    else:
-        rseed = 1216
-    print('rseed = ', rseed)
-    if len(sys.argv) > 11:
-        tf_seed = int(sys.argv[11])
-    else:
-        tf_seed = 2207
-    print('tf_seed = ', tf_seed)
+    args = parser.parse_args()
+    print(args)
+    #for _, value in parser.parse_args()._get_kwargs():
+    #    if value is not None:
+    #        print(value)
     # run main prediction function
-    pred_asso(enc_method, n_fold, lr, V_cdrs, CNN_flag, \
-              n_dense, n_units, dropout_flag, p_dropout, rseed, tf_seed)
+    pred_asso(args)
