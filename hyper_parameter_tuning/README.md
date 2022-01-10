@@ -1,6 +1,6 @@
 # Different models and hyper parameters
 
-Taking HLA TCR association prediction as an example
+Taking HLA TCR association prediction as an example (data used is not included for now)
 
 ## Six versions of models
 
