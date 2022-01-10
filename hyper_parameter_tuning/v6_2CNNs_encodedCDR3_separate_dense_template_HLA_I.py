@@ -52,8 +52,8 @@ parser.add_argument('--tf_seed', type=int, default=2207, help='random seed for t
 
 
 def pred_asso(enc_method = 'one_hot', n_fold = 1, lr = 1e-3, V_cdrs = 2, \
-              CNN_flag = True, \
-              n_dense = 1, n_units = '[16]', dropout_flag = 'False',
+              CNN_flag = 'True', \
+              n_dense = 1, n_units_str = '[16]', dropout_flag = 'False',
               p_dropout = 0.2, rseed = 1216, tf_seed = 2207):
 
     # process Arguments
