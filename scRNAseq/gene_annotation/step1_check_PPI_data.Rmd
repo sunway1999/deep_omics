@@ -1,0 +1,266 @@
+
+---
+title: "Assess the relation between co-expression and PPI in scRNA-seq data"
+author: "Wei Sun"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: null
+  theme: journal
+number_sections: yes
+highlight: tango
+smooth_scroll: no
+editor_options:
+  chunk_output_type: console
+toc: yes
+toc_depth: 3
+toc_float:
+  collapsed: yes
+---
+
+libraries and path
+
+```{r echo = TRUE, results = 'hide', warning = FALSE, message = FALSE}
+
+grp = "PFC_L2_3"
+data.dir.github = "../../ideas/Autism/data/"
+
+library(MASS)
+library(Matrix)
+library(data.table)
+library(dplyr)
+library(doParallel)
+library(svd)
+
+library(ggplot2)
+library(ggpubr)
+library(ggpointdensity)
+theme_set(theme_bw())
+
+```
+
+
+read in cell information and count data
+```{r}
+
+cell_info = fread(file.path(data.dir.github, "meta.tsv"), 
+                  stringsAsFactors=TRUE)
+dim(cell_info)
+cell_info[1:2,]
+
+dat1 = readRDS(file.path(data.dir.github, sprintf("ct_mtx/%s.rds", grp)))
+class(dat1)
+
+dim(dat1)
+dat1[1:5,1:4]
+```
+
+subset cell information
+
+```{r}
+table(colnames(dat1) %in% cell_info$cell)
+
+meta_cell = cell_info[match(colnames(dat1), cell_info$cell),]
+dim(meta_cell)
+meta_cell[1:2,]
+
+names(meta_cell)[11:12] = c("PMI", "RIN")
+names(meta_cell)[15:16] = c("mitoPercent", "riboPercent")
+dim(meta_cell)
+meta_cell[1:2,]
+
+summary(meta_cell)
+meta_cell$Capbatch = droplevels(meta_cell$Capbatch)
+meta_cell$Seqbatch = droplevels(meta_cell$Seqbatch)
+table(meta_cell$Capbatch, meta_cell$Seqbatch)
+summary(meta_cell$UMIs/meta_cell$genes)
+
+sort(table(paste(meta_cell$individual, meta_cell$diagnosis, sep=":")))
+```
+
+generate individual level information
+
+```{r}
+length(unique(meta_cell$individual))
+
+meta_ind = distinct(meta_cell[,3:12])
+dim(meta_ind)
+meta_ind[1:2,]
+meta_ind$diagnosis = relevel(meta_ind$diagnosis, ref="Control")
+table(meta_ind$diagnosis)
+
+if(nrow(meta_ind) != length(unique(meta_cell$individual))){
+  stop("there is non-unique information\n")
+}
+
+table(meta_ind$Seqbatch, meta_ind$Capbatch)
+```
+
+filter out genes with too many zero's
+
+```{r}
+n.zeros = rowSums(dat1 == 0)
+summary(n.zeros)
+
+0.6*ncol(dat1)
+0.8*ncol(dat1)
+
+table(n.zeros < 0.6*ncol(dat1))
+table(n.zeros < 0.8*ncol(dat1))
+table(n.zeros < 0.9*ncol(dat1))
+
+w2kp = which(n.zeros < 0.6*ncol(dat1))
+dat1 = dat1[w2kp,]
+
+dim(dat1)
+dat1[1:5,1:4]
+```
+
+add read-depth information
+
+```{r}
+dim(meta_cell)
+meta_cell[1:2,]
+
+table(meta_cell$cell == colnames(dat1))
+
+rd_cell = colSums(dat1)
+summary(rd_cell)
+
+meta_cell$rd = rd_cell
+
+med_rd_cell = tapply(rd_cell, meta_cell$individual, median)
+med_rd_cell
+
+rd_ind = tapply(rd_cell, meta_cell$individual, sum)
+rd_ind 
+
+table(names(med_rd_cell) == meta_ind$individual)
+meta_ind$med_rd_cell = med_rd_cell
+meta_ind$rd = rd_ind
+```
+
+Read in gene-gene interaction information.
+
+```{r}
+path = "../gene_annotation/"
+ppi = fread(paste0(path, "BIOGRID-ORGANISM-Homo_sapiens-3.5.185.tab3.txt.gz"))
+dim(ppi)
+names(ppi)
+ppi[1:2,]
+
+table(ppi$`Experimental System`, ppi$`Experimental System Type`)
+
+genes = unique(ppi$`Official Symbol Interactor A`)
+length(genes)
+genes = union(genes, unique(ppi$`Official Symbol Interactor B`))
+length(genes)
+
+```
+
+Pick one individual with large number of cells and calculate correlations. 
+```{r}
+meta_cell$individual = as.character(meta_cell$individual)
+
+dim(dat1)
+dat1[1:5,1:4]
+
+dim(meta_cell)
+meta_cell[1:2,]
+
+w2kp = which(meta_cell$individual == "5278")
+
+count_matrix = dat1[,w2kp]
+rd           = meta_cell$rd[w2kp]
+
+dim(count_matrix)
+count_matrix[1:2,1:5]
+summary(apply(count_matrix, 2, median))
+summary(apply(count_matrix, 1, median))
+table(rownames(count_matrix) %in% genes)
+
+count_matrix = count_matrix[which(rownames(count_matrix) %in% genes),]
+dim(count_matrix)
+
+X = as.matrix(log(t(count_matrix + 0.5)/rd))
+dim(X)
+
+cr = cor(X)
+
+ww1 = ppi$`Official Symbol Interactor A` %in% rownames(count_matrix)
+ww2 = ppi$`Official Symbol Interactor B` %in% rownames(count_matrix)
+table(ww1)
+table(ww2)
+
+col_nms = c("Official Symbol Interactor A", "Official Symbol Interactor B", 
+            "Experimental System", "Experimental System Type")
+ppi.X = ppi[which(ww1 & ww2), ..col_nms]
+names(ppi.X) = c("geneA", "geneB", "System", "Type")
+dim(ppi.X)
+ppi.X[1:2,]
+
+table(ppi.X$geneA == ppi.X$geneB)
+ppi.X = ppi.X[which(ppi.X$geneA != ppi.X$geneB),]
+t1 = table(ppi.X$System)
+sort(t1)
+
+eSystem2kp = names(t1)[t1 > 50]
+ppi.X = ppi.X[which(ppi.X$System %in% eSystem2kp),]
+dim(ppi.X)
+ppi.X[1:2,]
+
+table(ppi.X$System, ppi.X$Type)
+
+ppi.X$cr = rep(NA, nrow(ppi.X))
+
+for(s1 in unique(ppi.X$System)){
+  w2 = which(ppi.X$System == s1)
+  wA = match(ppi.X$geneA[w2], rownames(count_matrix))
+  wB = match(ppi.X$geneB[w2], rownames(count_matrix))
+  ppi.X$cr[w2] = diag(cr[wA,wB])
+}
+dim(ppi.X)
+ppi.X[1:2,]
+```
+
+summarize the correlations. 
+```{r fig.asp = 1}
+tapply(ppi.X$cr, ppi.X$System, summary)
+t1 = table(ppi.X$System)
+t1 = data.frame(System=names(t1), freq=as.numeric(t1))
+ppi.X$System_count = paste(ppi.X$System, 
+                           t1$freq[match(ppi.X$System, t1$System)], sep="-")
+p1 = ggplot(subset(ppi.X, Type %in% c("physical")), 
+            aes(x=System_count, y=cr, fill=System_count)) + 
+  geom_violin()  + coord_flip() + xlab("Correlation") +
+  ylab("Experimental system") +
+  theme(legend.position="none")
+p1
+```
+
+```{r fig.asp = 0.3}
+
+p2 = ggplot(subset(ppi.X, Type %in% c("genetic")), 
+            aes(x=System_count, y=cr, fill=System_count)) + 
+  geom_violin()  + coord_flip() + xlab("Correlation") +
+  ylab("Experimental system") +
+  theme(legend.position="none")
+p2
+```
+
+```{r fig.height=2, fig.width=3}
+s2rm = c("Synthetic Lethality", "Affinity Capture-Luminescence")
+ppi.X = ppi.X[which(! ppi.X$System %in% s2rm),]
+table(ppi.X$System)
+
+ggplot(ppi.X, aes(x=cr)) +
+  geom_histogram(color="darkblue", fill="lightblue") + 
+  xlab("correlation")
+
+```
+
+
+```{r}
+gc()
+sessionInfo()
+```
