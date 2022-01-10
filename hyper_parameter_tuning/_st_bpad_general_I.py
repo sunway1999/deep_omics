@@ -22,8 +22,8 @@ from _st_encode_general import encode_set
 # 6, length of cdr25 sequence
 # the chunk of code on assigning 11,037 tcrs to training, validating and testing
 #   is limited to the data from using the new pvalue cutoff
-def get_data(np_train, np_valid, np_test, n_fold = 5, \
-             enc_method = "one_hot", rseed = 2134):
+def get_data(np_train, np_valid, np_test, n_fold = 1, \
+             enc_method = "one_hot", rseed = 1216):
     # load HLA pseudo information
     HLA_I_pseudo = pd.read_csv("../data/step75_HLA_I_v2_pseudo_40.csv", \
                                 sep=',', header= 0)
