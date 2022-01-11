@@ -70,10 +70,10 @@ g1
 dev.off()
 
 # ------------------------------------------------------------------------
-# Read in encoding for 
+# Read in encoding using locally connected AE
 # ------------------------------------------------------------------------
 
-encoding = fread("../auto_encoder_plots/AE_sklearn_latent_output.csv")
+encoding = fread("../auto_encoder_plots/lc_AE_sklearn_latent_output.csv")
 dim(encoding)
 
 encoding[1:2,]
@@ -85,8 +85,9 @@ n_non_zero = colSums(edat > 0)
 n_non_zero
 
 edat = edat[, n_non_zero > 20]
-edat[edat > 15] = 15
+dim(edat)
 
+edat[edat > 4] = 4
 set.seed(100)
 date()
 tsne = Rtsne(edat, pca = FALSE)
@@ -112,7 +113,7 @@ gp1 = ggplot(df_tsne, aes(X1,X2,col=cell_type)) +
 
 gp1
 
-pdf("../auto_encoder_plots/AE_lc_sklearn_TSNE.pdf", width=3.5, height=2.7)
+pdf("../auto_encoder_plots/lc_AE_sklearn_TSNE.pdf", width=3.5, height=2.7)
 gp1
 dev.off()
 

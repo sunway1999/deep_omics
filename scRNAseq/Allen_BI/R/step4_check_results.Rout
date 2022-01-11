@@ -189,78 +189,80 @@ null device
           1 
 > 
 > # ------------------------------------------------------------------------
-> # Read in encoding for 
+> # Read in encoding using locally connected AE
 > # ------------------------------------------------------------------------
 > 
-> encoding = fread("../auto_encoder_plots/AE_sklearn_latent_output.csv")
+> encoding = fread("../auto_encoder_plots/lc_AE_sklearn_latent_output.csv")
 > dim(encoding)
 [1] 3079   21
 > 
 > encoding[1:2,]
-         d1        d2       d3       d4       d5       d6 d7       d8       d9
-1: 1.364057 0.5806741 1.638940 2.917765 2.569377 2.567051  0 0.000000 1.207102
-2: 1.385427 1.4264331 2.733851 4.128828 3.059142 1.855532  0 3.637491 2.757418
-   d10        d11 d12      d13       d14       d15 d16 d17 d18    d19       d20
-1:   0 0.09973605   0 1.747048 0.8196476 0.2675385   0   0   0 0.0000 0.3502590
-2:   0 1.50066180   0 2.805779 2.4762146 3.2068610   0   0   0 1.2315 0.4441519
-              cellname
-1: F1S4_160721_069_B01
-2: F1S4_160831_093_D01
+          d1        d2        d3 d4       d5        d6 d7       d8        d9
+1: 0.7899817 0.7291707 1.5505478  0 1.165602 0.3719109  0 1.226159 0.3580858
+2: 1.0172300 0.4391986 0.9050935  0 1.187467 0.9958286  0 1.098437 0.3214748
+         d10      d11       d12       d13       d14       d15       d16
+1: 0.7538776 1.351136 0.8139971 1.0445670 0.2302014 0.9487479 0.7234905
+2: 1.5031459 1.550558 0.9894836 0.1078646 1.1263627 1.0564395 1.6000586
+         d17       d18       d19 d20            cellname
+1: 1.3015196 0.9992328 0.0000000   0 F1S4_160721_069_B01
+2: 0.6382565 0.1978686 0.7322061   0 F1S4_160831_093_D01
 > 
 > edat = data.matrix(encoding[,1:20])
 > summary(edat)
-       d1              d2               d3               d4        
- Min.   :0.000   Min.   :0.0000   Min.   : 0.000   Min.   : 0.000  
- 1st Qu.:1.337   1st Qu.:0.6154   1st Qu.: 1.021   1st Qu.: 1.466  
- Median :1.781   Median :0.9850   Median : 1.623   Median : 2.119  
- Mean   :1.773   Mean   :1.2462   Mean   : 2.271   Mean   : 2.557  
- 3rd Qu.:2.222   3rd Qu.:1.5192   3rd Qu.: 2.544   3rd Qu.: 2.991  
- Max.   :4.336   Max.   :9.2602   Max.   :21.237   Max.   :16.257  
-       d5                d6               d7          d8         
- Min.   : 0.0000   Min.   : 0.000   Min.   :0   Min.   : 0.0000  
- 1st Qu.: 0.9291   1st Qu.: 1.006   1st Qu.:0   1st Qu.: 0.9444  
- Median : 1.5792   Median : 1.901   Median :0   Median : 1.4887  
- Mean   : 1.7960   Mean   : 2.743   Mean   :0   Mean   : 1.9577  
- 3rd Qu.: 2.3201   3rd Qu.: 2.955   3rd Qu.:0   3rd Qu.: 2.3405  
- Max.   :10.3943   Max.   :30.177   Max.   :0   Max.   :12.6755  
-       d9               d10                d11              d12        
- Min.   : 0.0000   Min.   :0.000000   Min.   :0.0000   Min.   :0.0000  
- 1st Qu.: 0.8913   1st Qu.:0.000000   1st Qu.:0.3052   1st Qu.:0.0000  
- Median : 1.4642   Median :0.000000   Median :0.6867   Median :0.0000  
- Mean   : 2.2321   Mean   :0.002176   Mean   :0.9837   Mean   :0.0181  
- 3rd Qu.: 2.1391   3rd Qu.:0.000000   3rd Qu.:1.1724   3rd Qu.:0.0000  
- Max.   :24.5713   Max.   :1.664168   Max.   :9.2408   Max.   :5.0516  
-      d13              d14             d15             d16         d17   
- Min.   : 0.000   Min.   :0.000   Min.   :0.000   Min.   :0   Min.   :0  
- 1st Qu.: 1.272   1st Qu.:0.610   1st Qu.:1.111   1st Qu.:0   1st Qu.:0  
- Median : 1.906   Median :1.102   Median :1.868   Median :0   Median :0  
- Mean   : 2.261   Mean   :1.374   Mean   :1.852   Mean   :0   Mean   :0  
- 3rd Qu.: 2.648   3rd Qu.:1.934   3rd Qu.:2.539   3rd Qu.:0   3rd Qu.:0  
- Max.   :15.318   Max.   :7.619   Max.   :5.525   Max.   :0   Max.   :0  
-      d18         d19              d20         
- Min.   :0   Min.   :0.0000   Min.   : 0.0000  
- 1st Qu.:0   1st Qu.:0.3636   1st Qu.: 0.4531  
- Median :0   Median :2.4033   Median : 0.7986  
- Mean   :0   Mean   :1.9310   Mean   : 1.1323  
- 3rd Qu.:0   3rd Qu.:2.8560   3rd Qu.: 1.2693  
- Max.   :0   Max.   :4.8800   Max.   :11.0946  
+       d1               d2                d3               d4   
+ Min.   :0.0000   Min.   : 0.0000   Min.   :0.0000   Min.   :0  
+ 1st Qu.:0.6451   1st Qu.: 0.6103   1st Qu.:0.4701   1st Qu.:0  
+ Median :0.9083   Median : 0.8151   Median :0.7030   Median :0  
+ Mean   :1.0457   Mean   : 1.0044   Mean   :0.9173   Mean   :0  
+ 3rd Qu.:1.1935   3rd Qu.: 1.0738   3rd Qu.:1.0512   3rd Qu.:0  
+ Max.   :8.4754   Max.   :10.6191   Max.   :8.2147   Max.   :0  
+       d5               d6               d7          d8        
+ Min.   :0.0000   Min.   :0.0000   Min.   :0   Min.   :0.0000  
+ 1st Qu.:0.4731   1st Qu.:0.5742   1st Qu.:0   1st Qu.:0.7576  
+ Median :0.6723   Median :0.7931   Median :0   Median :0.9946  
+ Mean   :0.8424   Mean   :0.8772   Mean   :0   Mean   :1.0349  
+ 3rd Qu.:0.9181   3rd Qu.:1.0446   3rd Qu.:0   3rd Qu.:1.2675  
+ Max.   :7.8319   Max.   :5.6886   Max.   :0   Max.   :3.4338  
+       d9              d10               d11              d12         
+ Min.   :0.0000   Min.   : 0.0000   Min.   :0.0000   Min.   : 0.0000  
+ 1st Qu.:0.7882   1st Qu.: 0.5643   1st Qu.:0.6715   1st Qu.: 0.5725  
+ Median :1.0120   Median : 0.9508   Median :1.0093   Median : 0.8137  
+ Mean   :1.0708   Mean   : 1.1293   Mean   :1.1927   Mean   : 1.1324  
+ 3rd Qu.:1.2629   3rd Qu.: 1.3242   3rd Qu.:1.5236   3rd Qu.: 1.1346  
+ Max.   :5.4671   Max.   :10.2889   Max.   :6.2031   Max.   :13.2448  
+      d13               d14               d15               d16        
+ Min.   : 0.0000   Min.   : 0.0000   Min.   : 0.0000   Min.   :0.0000  
+ 1st Qu.: 0.4462   1st Qu.: 0.6663   1st Qu.: 0.5025   1st Qu.:0.7091  
+ Median : 0.7481   Median : 0.9724   Median : 0.7552   Median :0.9948  
+ Mean   : 1.0128   Mean   : 1.1674   Mean   : 1.1032   Mean   :1.0051  
+ 3rd Qu.: 1.0475   3rd Qu.: 1.3205   3rd Qu.: 1.1006   3rd Qu.:1.2635  
+ Max.   :14.1693   Max.   :10.3958   Max.   :14.5184   Max.   :3.4261  
+      d17              d18               d19               d20   
+ Min.   :0.0000   Min.   : 0.0000   Min.   : 0.0000   Min.   :0  
+ 1st Qu.:0.6416   1st Qu.: 0.6702   1st Qu.: 0.9311   1st Qu.:0  
+ Median :0.8815   Median : 0.9601   Median : 1.2480   Median :0  
+ Mean   :1.0862   Mean   : 1.1607   Mean   : 1.4183   Mean   :0  
+ 3rd Qu.:1.1969   3rd Qu.: 1.3092   3rd Qu.: 1.5674   3rd Qu.:0  
+ Max.   :9.9469   Max.   :10.4461   Max.   :11.9765   Max.   :0  
 > 
 > n_non_zero = colSums(edat > 0)
 > n_non_zero
   d1   d2   d3   d4   d5   d6   d7   d8   d9  d10  d11  d12  d13  d14  d15  d16 
-3070 3018 3050 3027 3010 2983    0 3028 3000   11 2828   60 3047 2966 3026    0 
+3054 3063 3046    0 3049 3040    0 3072 3075 3025 3070 3048 2980 3057 3067 3060 
  d17  d18  d19  d20 
-   0    0 2419 2934 
+3063 3064 2972    0 
 > 
 > edat = edat[, n_non_zero > 20]
-> edat[edat > 15] = 15
+> dim(edat)
+[1] 3079   17
 > 
+> edat[edat > 4] = 4
 > set.seed(100)
 > date()
-[1] "Mon Jan  3 21:50:08 2022"
+[1] "Mon Jan 10 20:53:43 2022"
 > tsne = Rtsne(edat, pca = FALSE)
 > date()
-[1] "Mon Jan  3 21:50:16 2022"
+[1] "Mon Jan 10 20:53:51 2022"
 > 
 > df_tsne = data.frame(tsne$Y)
 > dim(df_tsne)
@@ -280,9 +282,9 @@ Astro   Exc   Inh Oligo   OPC
 > dim(df_tsne)
 [1] 3079    3
 > df_tsne[1:2,]
-         X1       X2 cell_type
-1 16.182197 27.46324       Inh
-2 -7.550844 13.76014       Exc
+         X1        X2 cell_type
+1  20.74695 27.301728       Inh
+2 -16.93241  7.823303       Exc
 > 
 > cols = c("#FF7F00","orchid", "red","dodgerblue2","black")
 > 
@@ -293,7 +295,7 @@ Astro   Exc   Inh Oligo   OPC
 > 
 > gp1
 > 
-> pdf("../auto_encoder_plots/AE_lc_sklearn_TSNE.pdf", width=3.5, height=2.7)
+> pdf("../auto_encoder_plots/lc_AE_sklearn_TSNE.pdf", width=3.5, height=2.7)
 > gp1
 > dev.off()
 pdf 
@@ -331,4 +333,4 @@ loaded via a namespace (and not attached):
 > q(save="no")
 > proc.time()
    user  system elapsed 
- 10.070   0.592  10.843 
+ 10.808   0.639  11.714 
