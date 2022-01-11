@@ -49,9 +49,20 @@ For the dense layer part after concatenating the HLA and TCR information, when u
 
 We also try using dropout rate 0.2 or 0.5, or no dropout. When only one dense layer is used, the dropout happens after the dense layer, and when two dense layers are used, the dropout happens between the two layers.
 
+## Code files
 
+Take v1 basic model as an example, 
 
+[v1_basic_template_HLA_I.py](https://github.com/sunway1999/deep_omics/blob/main/hyper_parameter_tuning/v1_basic_template_HLA_I.py) has the main function for training model and making prediction
 
+[v1_build_model_general_u.py](https://github.com/sunway1999/deep_omics/blob/main/hyper_parameter_tuning/v1_build_model_general_u.py) builds the model
+
+[\_st_bpad_general_I.py](https://github.com/sunway1999/deep_omics/blob/main/hyper_parameter_tuning/_st_bpad_general_I.py) generates encoded data with the help of 
+[\_st_encode_general.py](https://github.com/sunway1999/deep_omics/blob/main/hyper_parameter_tuning/_st_encode_general.py)
+
+[\_st_get_acc_classes_loss.py](https://github.com/sunway1999/deep_omics/blob/main/hyper_parameter_tuning/_st_get_acc_classes_loss.py) contains some self-defined evaluation metrics
+
+[v1_HLA_I.sh](https://github.com/sunway1999/deep_omics/blob/main/hyper_parameter_tuning/v1_HLA_I.sh) submits the jobs
 
 
 ## Reference
