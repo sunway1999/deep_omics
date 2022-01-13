@@ -4,6 +4,8 @@ Taking HLA TCR association prediction as an example
 
 (data used is not included for now)
 
+Here the evaluation metric to monitor in order to decide when to stop training is the AUC on validation data set. Can also instead use other evalution metrics, for example, validation loss, depending on different data sets and problem settings. 
+
 ## Six versions of models
 
 ### v1 basic model:
