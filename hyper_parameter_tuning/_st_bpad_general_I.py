@@ -86,15 +86,14 @@ def get_data(np_train, np_valid, np_test, n_fold = 1, \
         # define encoder for HLA
         def HLA_enc(hla_list):
             # pseudo sequences in the file for HLA_I alleles
-            # "X" for some HLA-I, so add 'X' to the encoding template
-            blosum62_matrix = pd.read_csv("../data/blosum62.csv", \
+            # "X" for some HLA-I, use the blosum62 matrix with "X"
+            blosum62_matrix = pd.read_csv("../data/blosum62_X.csv", \
                                     sep=',', header= 0)
             blosum62_array = np.array(blosum62_matrix)
             blosum62_dict = defaultdict(list)
-            for i in range(20):
+            for i in range(21):
                 blosum62_dict[blosum62_array[i][0]] = \
-                       blosum62_array[i][1:].tolist() + [-4]
-            blosum62_dict['X'] = [-4 for _ in range(20)] + [1]
+                       blosum62_array[i][1:].tolist()
             return [[blosum62_dict[aa] for aa in hla] for hla in hla_list]
         # define encoder for CDR3
         # this encoder also works for cdr1, cdr25
