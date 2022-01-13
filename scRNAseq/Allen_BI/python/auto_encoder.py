@@ -83,12 +83,12 @@ def get_lc_AE(input_shape1, latent_size = 20, n_filter = 1, kernel_size = 100,\
     lc_AE = Model(input_e, decoded)
     return lc_AE
 
-model_type = "lc_AE"
-split_method = "sklearn"
-number_of_epochs = 500
-batch_size = 32
-learning_rate = 1e-3
-testing_fraction = 0.2
+# model_type = "lc_AE"
+# split_method = "sklearn"
+# number_of_epochs = 500
+# batch_size = 32
+# learning_rate = 1e-3
+# testing_fraction = 0.2
 
 def main(model_type = "lc_AE", split_method = "sklearn",
          number_of_epochs = 500, batch_size = 32,
